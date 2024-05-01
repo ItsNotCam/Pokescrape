@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
-import requests, json, re, sys, json, sqlite3
+import requests, sys, json, sqlite3
 from pokemon import Pokemon
-from init_db import init_db, add_pokemon_to_database
+from dbops import init_db, add_pokemon_to_database
 import asyncio
 import aiofiles as aiof
 from tabulate import tabulate

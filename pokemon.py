@@ -13,14 +13,16 @@ class Pokemon:
 		self.speed = speed
 	
 	def to_tuple(self):
-		return (self.number,
-		 self.name,
-		 self.sub_name,
-		 self.icon_path,
-		 self.total,
-		 self.hp,
-		 self.attack,
-		 self.defense,
-		 self.special_attack,
-		 self.special_defense,
-		 self.speed)
+		return (
+			self.number,
+		 	self.name,
+		 	self.sub_name,
+		 	self.icon_path,
+		 	self.total,
+		 	self.hp,
+		 	self.attack,
+		 	self.defense,
+		 	self.special_attack,
+		 	self.special_defense,
+		 	self.speed
+		)
