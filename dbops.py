@@ -47,6 +47,23 @@ def init_db(conn):
 	cursor.execute(create_p_type)
 	conn.commit()
 
+	create_moves = """
+		CREATE TABLE IF NOT EXISTS moves (
+			name VARCHAR(255) PRIMARY KEY,
+			element_name VARCHAR(255) NOT NULL,
+			dmg_category VARCHAR(32),
+			power INTEGER NOT NULL,
+			accuracy INTEGER NOT NULL,
+			pp INTEGER NOT NULL,
+			description TEXT NOT NULL,
+			probability INTEGER NOT NULL,
+			
+			FOREIGN KEY (element_name) REFERENCES elements(name)
+		)
+	"""
+	cursor.execute(create_moves)
+	conn.commit()
+
 	cursor.close()
 	return conn
     
@@ -89,3 +106,14 @@ def add_pokemon_to_database(pokemon, elements, conn):
 		add_pokemon_type_to_database(pokemon, element, conn)
 
 	cursor.close()
+
+def add_move_to_database(move, conn):
+	add_element_to_database(move.element, conn)
+	conn.execute("""
+		INSERT INTO moves (
+			name, element_name, dmg_category, power, accuracy, pp, description, probability
+		) VALUES (
+			?,?,?,?,?,?,?,?
+		)
+	""", move.to_tuple())
+	conn.commit()
