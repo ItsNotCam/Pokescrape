@@ -8,7 +8,7 @@ class Move:
 		self.pp = pp
 		self.description = description
 		self.probability = probability
-	
+
 	def to_tuple(self):
 		return (
 			self.name,
