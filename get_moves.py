@@ -33,14 +33,6 @@ moves = soup.body.find(id="moves").find("tbody").find_all("tr")
 for idx, move in enumerate(moves):
 	name, element, dmg_category, power, accuracy, pp, description, probability = move.find_all("td")
 
-	name = get_tag(name, "a")
-	element = get_tag(element, "a")
-	power = power.text.strip()
-	accuracy = accuracy.text.strip()
-	pp = pp.text.strip()
-	description = description.text.strip()
-	probability = probability.text.strip()
-
 	dmg_cat_img = dmg_category.find("img")
 	if dmg_cat_img is not None:
 		dmg_category = dmg_cat_img["alt"]	
@@ -48,14 +40,14 @@ for idx, move in enumerate(moves):
 		dmg_category = "-"
 
 	new_move = Move(
-		name, 
-		element, 
+		get_tag(name, "a"), 
+		get_tag(element, "a"), 
 		dmg_category, 		
-		to_number(power),
-		to_number(accuracy),
-		to_number(pp),
-		description,
-		to_number(probability)
+		to_number(power.text.strip()),
+		to_number(accuracy.text.strip()),
+		to_number(pp.text.strip()),
+		description.text.strip(),
+		to_number(probability.text.strip())
 	)
 
 	print(idx, new_move.to_tuple())
