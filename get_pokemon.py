@@ -1,10 +1,9 @@
-from bs4 import BeautifulSoup
-import requests, sys, json, sqlite3
-from pokemon import Pokemon
 from dbops import init_db, add_pokemon_to_database
-import asyncio
-import aiofiles as aiof
+import requests, sys, json, sqlite3, asyncio
+from objects.pokemon import Pokemon
 from tabulate import tabulate
+from bs4 import BeautifulSoup
+import aiofiles as aiof
 
 loop = asyncio.get_event_loop()
 
@@ -25,15 +24,15 @@ async def download_image(img_url, img_path):
 # URL = "https://pokemondb.net/pokedex/all"
 # body = requests.get(URL).content
 # soup = BeautifulSoup(body, features="html.parser")
-# with open('pokemon.html', 'w') as file:
+# with open('pages/pokemon.html', 'w') as file:
 #   file.write(BeautifulSoup.prettify(soup))
 
-conn = sqlite3.connect('pokemon.db')
+conn = sqlite3.connect('db/pokemon.db')
 init_db(conn)
 
 if len(sys.argv) > 1 and sys.argv[1] == "true":
 	html = ""
-	with open('pokemon.html', 'r') as file:
+	with open('pages/pokemon.html', 'r') as file:
 		html = file.read()
 
 	soup = BeautifulSoup(html, features="html.parser")
@@ -59,9 +58,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "true":
 
 		new_pokemon = Pokemon(
 			int(get_tag(num, "span")), 
-			name,
-			sub_name,
-			img_path,
+			name, sub_name, img_path,
 			int(total.text.strip()),
 			int(hp.text.strip()),
 			int(attack.text.strip()),
@@ -77,7 +74,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "true":
 element_type = sys.argv[1].strip()
 cursor = conn.cursor()
 cursor.execute("""
-	SELECT p.number, p.name || " " || p.sub_name as 'full name', GROUP_CONCAT(pt.element_name, ","), p.attack, p.defense, p.special_attack, p.special_defense, p.speed, p.hp
+	SELECT p.number, p.name || " " || p.sub_name as 'full name', GROUP_CONCAT(pt.element_name, ","), 
+    p.attack, p.defense, p.special_attack, p.special_defense, p.speed, p.hp
 	FROM pokemon as p
 	JOIN pokemon_type as pt ON pt.pokemon_number = p.number AND pt.pokemon_name = p.name AND pt.pokemon_sub_name = p.sub_name
 	GROUP BY p.number, p.name, p.sub_name

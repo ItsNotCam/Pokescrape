@@ -3,7 +3,7 @@ import requests, sys, json, sqlite3
 from dbops import init_db
 
 from dbops import add_move_to_database
-from move import Move
+from objects.move import Move
 
 def get_tag(element, selector):
   return element.find(selector).text.strip()
@@ -14,19 +14,19 @@ def to_number(str):
 
 	return -1	
 
-conn = sqlite3.connect('pokemon.db')
+conn = sqlite3.connect('db/pokemon.db')
 init_db(conn)
 
 # URL = "https://pokemondb.net/move/all"
 # body = requests.get(URL).content
 # soup = BeautifulSoup(body, features="html.parser")
-# with open('moves.html', 'w') as file:
+# with open('pages/moves.html', 'w') as file:
 #   file.write(BeautifulSoup.prettify(soup))
 
 html = ""
-with open('moves.html', 'r') as file:
+with open('pages/moves.html', 'r') as file:
 	html = file.read()
-     
+
 soup = BeautifulSoup(html, features="html.parser")
 moves = soup.body.find(id="moves").find("tbody").find_all("tr")
 
