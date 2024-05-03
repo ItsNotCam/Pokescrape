@@ -1,69 +1,12 @@
+import os
+
 def init_db(conn):
 	cursor = conn.cursor()
-	create_pokemon = """
-		CREATE TABLE IF NOT EXISTS pokemon (
-			number INTEGER NOT NULL,
-			name VARCHAR(255) NOT NULL,
-			sub_name VARCHAR(255),
-			icon_path VARCHAR(255) NOT NULL DEFAULT 'icons/default.png',
-			total INTEGER NOT NULL,
-			hp INTEGER NOT NULL,
-			attack INTEGER NOT NULL,
-			defense INTEGER NOT NULL,
-			special_attack INTEGER NOT NULL,
-			special_defense INTEGER NOT NULL,
-			speed INTEGER NOT NULL,
-
-			PRIMARY KEY (number, name, sub_name)
-		)
-	"""
-	cursor.execute(create_pokemon)
+	sql_files = [f for f in os.listdir("db") if ".sql" in f]
+	for sql_file in sql_files:
+		with open(f'db/{sql_file}') as sql:
+			cursor.execute(sql.read())
 	conn.commit()
-
-	create_type = """
-		CREATE TABLE IF NOT EXISTS elements (
-			name VARCHAR(255) PRIMARY KEY
-		)
-	"""
-	cursor.execute(create_type)
-	conn.commit()
-
-
-	create_p_type = """
-		CREATE TABLE IF NOT EXISTS pokemon_type (
-			pokemon_number INTEGER,
-			pokemon_name VARCHAR(255),
-			pokemon_sub_name VARCHAR(255),
-			element_name VARCHAR(255),
-			
-			FOREIGN KEY (pokemon_number) REFERENCES pokemon(number),
-			FOREIGN KEY (pokemon_name) REFERENCES pokemon(name),
-			FOREIGN KEY (pokemon_sub_name) REFERENCES pokemon(sub_name),
-			FOREIGN KEY (element_name) REFERENCES elements(name),
-
-			PRIMARY KEY (pokemon_number, pokemon_name, pokemon_sub_name, element_name)
-		)
-	"""
-	cursor.execute(create_p_type)
-	conn.commit()
-
-	create_moves = """
-		CREATE TABLE IF NOT EXISTS moves (
-			name VARCHAR(255) PRIMARY KEY,
-			element_name VARCHAR(255) NOT NULL,
-			dmg_category VARCHAR(32),
-			power INTEGER NOT NULL,
-			accuracy INTEGER NOT NULL,
-			pp INTEGER NOT NULL,
-			description TEXT NOT NULL,
-			probability INTEGER NOT NULL,
-			
-			FOREIGN KEY (element_name) REFERENCES elements(name)
-		)
-	"""
-	cursor.execute(create_moves)
-	conn.commit()
-
 	cursor.close()
 	return conn
     

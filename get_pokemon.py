@@ -1,5 +1,5 @@
 from dbops import init_db, add_pokemon_to_database
-import requests, sys, json, sqlite3, asyncio
+import requests, sys, json, sqlite3, asyncio, os
 from objects.pokemon import Pokemon
 from tabulate import tabulate
 from bs4 import BeautifulSoup
@@ -14,12 +14,14 @@ def get_tag_all(element, selector):
   return [e.text.strip() for e in element.find_all(selector)]
 
 async def download_image(img_url, img_path):
-	return
-	with requests.get(img_url) as img_data:
-		if img_data is not None:
-			async with aiof.open(img_path, 'wb') as img:
-					await img.write(img_data.content)
-					await img.flush()
+  if not os.path.exists("icons"):
+    os.mkdir("icons")
+
+  with requests.get(img_url) as img_data:
+    if img_data is not None:
+      async with aiof.open(img_path, 'wb') as img:
+        await img.write(img_data.content)
+        await img.flush()
 
 # URL = "https://pokemondb.net/pokedex/all"
 # body = requests.get(URL).content
@@ -54,7 +56,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "refresh":
 		img_url = num.find("picture").find("img")["src"]
 		img_path = f"icons/{name}.png"
 
-		server = loop.run_until_complete(download_image(img_url, img_path))
+		loop.run_until_complete(download_image(img_url, img_path))
 
 		new_pokemon = Pokemon(
 			int(get_tag(num, "span")), 
@@ -80,11 +82,12 @@ else:
     FROM pokemon as p
     JOIN pokemon_type as pt ON pt.pokemon_number = p.number AND pt.pokemon_name = p.name AND pt.pokemon_sub_name = p.sub_name
     GROUP BY p.number, p.name, p.sub_name
-    ORDER BY MAX(p.hp) ASC LIMIT 10
+    ORDER BY MAX(p.hp) ASC LIMIT 50
   """).fetchall()
 
   print(f"All {len(rows)} {element_type} types")
   print(tabulate(rows, headers=['#', 'Name', 'Elements', 'Att', 'Def', 'Sp.Att.', 'Sp.Def.', 'Speed', 'HP'], tablefmt='pretty', stralign='left'))
 
-cursor.close()
+  cursor.close()
+
 conn.close()
