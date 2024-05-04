@@ -1,9 +1,16 @@
 from dbops import init_db, add_pokemon_to_database
-import requests, sys, json, sqlite3, asyncio, os
+import requests, sys, json, sqlite3, asyncio, os, re
 from objects.pokemon import Pokemon
 from tabulate import tabulate
 from bs4 import BeautifulSoup
 import aiofiles as aiof
+
+if not os.path.exists("icons"):
+	os.mkdir("icons")
+if not os.path.exists("images"):
+	os.mkdir("images")
+if not os.path.exists("pages"):
+	os.mkdir("pages")
 
 loop = asyncio.get_event_loop()
 
@@ -14,15 +21,32 @@ def get_tag_all(element, selector):
   return [e.text.strip() for e in element.find_all(selector)]
 
 async def download_image(img_url, img_path):
-  if not os.path.exists("icons"):
-    os.mkdir("icons")
-
   with requests.get(img_url) as img_data:
     if img_data is not None:
       async with aiof.open(img_path, 'wb') as img:
         await img.write(img_data.content)
         await img.flush()
 
+def download_pkmn_img(name, link):
+	if not os.path.exists("pages/pokemon"):
+		os.mkdir("pages/pokemon")
+
+	# THIS SIG IS INCONSISTENT
+  # BROKE ON #0710
+
+	body = requests.get(link).content
+	soup = BeautifulSoup(body, features="html.parser")
+	# with open(f'pages/pokemon/{name}.html', 'w') as file:
+	# 	file.write(BeautifulSoup.prettify(soup))
+  
+	element = soup.find(attrs={"data-title": re.compile(r".*official artwork$")})
+	img_url = element["href"]
+	img_path = f"images/{name}.png"
+	loop.run_until_complete(download_image(img_url, img_path))
+
+	return img_path
+
+URL = "https://pokemondb.net"
 # URL = "https://pokemondb.net/pokedex/all"
 # body = requests.get(URL).content
 # soup = BeautifulSoup(body, features="html.parser")
@@ -51,16 +75,21 @@ if len(sys.argv) > 1 and sys.argv[1] == "refresh":
 			sub_name = name_small_element.text.strip()
 
 		elements = [e.lower() for e in get_tag_all(elements, "a")]
-		name = get_tag(name, "a").lower()
+		pokemon_name, pokemon_link = (get_tag(name, "a").lower(), name.find("a")["href"])
+    
+		img_path = download_pkmn_img(pokemon_name, f"{URL}{pokemon_link}")
 		
-		img_url = num.find("picture").find("img")["src"]
-		img_path = f"icons/{name}.png"
 
-		loop.run_until_complete(download_image(img_url, img_path))
+		# print(pokemon_name, f"{URL}{pokemon_link}")
+		# continue
+    # img_url = num.find("picture").find("img")["src"]
+    # img_path = f"icons/{pokemon_name}.png"
+
+		# loop.run_until_complete(download_image(img_url, img_path))
 
 		new_pokemon = Pokemon(
 			int(get_tag(num, "span")), 
-			name, sub_name, img_path,
+			pokemon_name, sub_name, img_path,
 			int(total.text.strip()),
 			int(hp.text.strip()),
 			int(attack.text.strip()),
