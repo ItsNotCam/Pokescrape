@@ -19,7 +19,7 @@ def entity_exists(SQL, VARS, conn):
 
 def add_element_to_database(element, conn):
 	if not entity_exists("SELECT COUNT(*) FROM elements WHERE name=?", (element,), conn):
-		conn.execute("INSERT INTO elements VALUES (?)", (element, ))
+		conn.execute("INSERT OR IGNORE INTO elements VALUES (?)", (element, ))
 		conn.commit()
 
 def add_pokemon_type_to_database(pokemon, element, conn):
@@ -30,16 +30,24 @@ def add_pokemon_type_to_database(pokemon, element, conn):
 	)
 
 	if not exists:
-		conn.execute("INSERT INTO pokemon_type VALUES (?,?,?,?)", vars)
+		conn.execute("INSERT OR IGNORE INTO pokemon_type VALUES (?,?,?,?)", vars)
 		conn.commit()
 
-def add_pokemon_to_database(pokemon, elements, conn):
+def add_ability_to_database(ability, conn):
+	return False
+
+def add_pokemon_to_database(pokemon, elements, abilities, conn):
+	# ev_amount, ev_type,
 	cursor = conn.cursor()
 	cursor.execute("""
-		INSERT INTO pokemon (
-			number, name, sub_name, icon_path, total, hp, attack, defense, special_attack, special_defense, speed
+		INSERT OR IGNORE INTO pokemon (
+			number, name, sub_name, icon_path, total, hp, attack, defense, special_attack, special_defense, speed,
+			species, height, weight, catch_rate_num, catch_rate_percent, friendship_num,
+			friendship_extremity, base_exp, growth_rate, gender_male_percent, gender_female_percent, egg_cycles_num,
+			egg_cycles_steps_min, egg_cycles_steps_max
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?, ?
 		)
 	""", pokemon.to_tuple())
 	conn.commit()
@@ -47,13 +55,16 @@ def add_pokemon_to_database(pokemon, elements, conn):
 	for element in elements:
 		add_element_to_database(element, conn)
 		add_pokemon_type_to_database(pokemon, element, conn)
+	
+	for ability in abilities:
+		add_ability_to_database(ability, conn)
 
 	cursor.close()
 
 def add_move_to_database(move, conn):
 	add_element_to_database(move.element, conn)
 	conn.execute("""
-		INSERT INTO moves (
+		INSERT OR IGNORE INTO moves (
 			name, element_name, dmg_category, power, accuracy, pp, description, probability
 		) VALUES (
 			?,?,?,?,?,?,?,?

@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS abilities (
+	name VARCHAR(64) PRIMARY KEY,
+	description TEXT NOT NULL,
+	generation INTEGER NOT NULL
+)

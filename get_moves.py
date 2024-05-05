@@ -13,58 +13,56 @@ def get_tag(element, selector):
 def to_number(str):
 	if str.isdigit():
 		return int(str)
+	return None	
 
-	return -1	
+def scrape(start_index):
+	URL = "https://pokemondb.net/move/all"
+	body = requests.get(URL).content
+	soup = BeautifulSoup(body, features="html.parser")
+	with open('pages/moves.html', 'w') as file:
+		file.write(BeautifulSoup.prettify(soup))
 
-conn = sqlite3.connect('db/pokemon.db')
-init_db(conn)
+	html = ""
+	with open('pages/moves.html', 'r') as file:
+		html = file.read()
 
-# URL = "https://pokemondb.net/move/all"
-# body = requests.get(URL).content
-# soup = BeautifulSoup(body, features="html.parser")
-# with open('pages/moves.html', 'w') as file:
-#   file.write(BeautifulSoup.prettify(soup))
+	soup = BeautifulSoup(html, features="html.parser")
+	moves = soup.body.find(id="moves").find("tbody").find_all("tr")
+	moves = moves[start_index:]
 
-html = ""
-with open('pages/moves.html', 'r') as file:
-	html = file.read()
+	if sys.argv[1] == "refresh":
+		for idx, move in enumerate(moves):
+			name, element, dmg_category, power, accuracy, pp, description, probability = move.find_all("td")
 
-soup = BeautifulSoup(html, features="html.parser")
-moves = soup.body.find(id="moves").find("tbody").find_all("tr")
+			dmg_cat_img = dmg_category.find("img")
+			if dmg_cat_img is not None:
+				dmg_category = dmg_cat_img["alt"]	
+			else:
+				dmg_category = "-"
 
-if sys.argv[1] == "refresh":
-  for idx, move in enumerate(moves):
-    name, element, dmg_category, power, accuracy, pp, description, probability = move.find_all("td")
+			new_move = Move(
+				get_tag(name, "a"), 
+				get_tag(element, "a"), 
+				dmg_category, 		
+				to_number(power.text.strip()),
+				to_number(accuracy.text.strip()),
+				to_number(pp.text.strip()),
+				description.text.strip(),
+				to_number(probability.text.strip())
+			)
 
-    dmg_cat_img = dmg_category.find("img")
-    if dmg_cat_img is not None:
-      dmg_category = dmg_cat_img["alt"]	
-    else:
-      dmg_category = "-"
+			print(idx, new_move.to_tuple())
+			add_move_to_database(new_move, sqlite3.connect('db/pokemon.db'))
 
-    new_move = Move(
-      get_tag(name, "a"), 
-      get_tag(element, "a"), 
-      dmg_category, 		
-      to_number(power.text.strip()),
-      to_number(accuracy.text.strip()),
-      to_number(pp.text.strip()),
-      description.text.strip(),
-      to_number(probability.text.strip())
-    )
+# else:
+#   element_type = sys.argv[1].strip()
+#   cursor = conn.cursor()
+#   rows = cursor.execute("""
+#     SELECT name, element_name, power, accuracy
+#     FROM moves
+#     WHERE element_name=?
+#     LIMIT 25
+#   """, (sys.argv[1],)).fetchall()
 
-    print(idx, new_move.to_tuple())
-    add_move_to_database(new_move, conn)
-
-else:
-  element_type = sys.argv[1].strip()
-  cursor = conn.cursor()
-  rows = cursor.execute("""
-    SELECT name, element_name, power, accuracy
-    FROM moves
-    WHERE element_name=?
-    LIMIT 25
-  """, (sys.argv[1],)).fetchall()
-
-  print(f"All {len(rows)} {element_type} types")
-  print(tabulate(rows, headers=['name', 'element', 'power', 'accuracy'], tablefmt='pretty', stralign='left'))
+#   print(f"All {len(rows)} {element_type} types")
+#   print(tabulate(rows, headers=['name', 'element', 'power', 'accuracy'], tablefmt='pretty', stralign='left'))
