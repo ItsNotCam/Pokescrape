@@ -2,8 +2,6 @@ class Pokemon:
 	def __init__(self, number, name, sub_name, icon_path, total, \
 							hp, attack, defense, special_attack, special_defense, \
 							speed, species, height, weight
-		,ev_amounts
-		,ev_types
 		,catch_rate_number
 		,catch_rate_percent
 		,friendship_number
@@ -31,8 +29,6 @@ class Pokemon:
 
 		self.species = species
 		self.height = height
-		# self.ev_amounts = ev_amounts,
-		# self.ev_types = ev_types,
 		self.catch_rate_number = catch_rate_number
 		self.catch_rate_percent = catch_rate_percent
 		self.friendship_number = friendship_number
@@ -62,8 +58,6 @@ class Pokemon:
 			self.species,
 			self.height,
 			self.weight
-		# ,self.ev_amounts
-		# ,self.ev_types
 		,self.catch_rate_number
 		,self.catch_rate_percent
 		,self.friendship_number

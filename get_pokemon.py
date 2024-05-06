@@ -1,12 +1,14 @@
-from dbops import init_db, add_pokemon_to_database
 import requests, sys, json, sqlite3, asyncio, os, re
 from objects.pokemon import Pokemon
 from tabulate import tabulate
 from bs4 import BeautifulSoup
 import aiofiles as aiof
 
-import sqlite3
-
+from objects.pokemon_move import PokemonMove
+from dbops import init_db, add_pokemon_to_database, get_and_add_evs_to_database, add_moves_to_database
+from objects.ability import Ability
+from get_abilities import add_abilities
+from get_moves import scrape as get_all_moves
 
 loop = asyncio.get_event_loop()
 
@@ -53,25 +55,14 @@ def get_pokedex_data(soup2):
 			WEIGHT = float(weight_selection[0].get_text().split(" ")[0].replace("kg","").strip())
 
 		ABILITIES = []
-		abilities_selection = soup2.select("th:-soup-contains('Abilities') + td")
-		if len(abilities_selection) > 0:
-			for ability in abilities_selection[0].select(".text-muted"):
-				ABILITIES.append(ability.find("a").get_text(strip=True))
+		abilities_selection = soup2.select("th:-soup-contains('Abilities') + td span a")
+		if abilities_selection is not None and len(abilities_selection) > 0:
+			ABILITIES.append(abilities_selection[0].get_text(strip=True))
 		
 		return (SPECIES, HEIGHT, WEIGHT, ABILITIES)
 
 def get_training_data(soup2):
 		training_selection = soup2.select("h2:-soup-contains('Training') + table tr")
-
-		EV_NUMBERS = []
-		EV_TYPES = []
-		ev_selection = soup2.select("th:-soup-contains('EV yield') + td")
-		if len(ev_selection) > 0:
-			ev_list = ev_selection[0].get_text(strip=True).split(", ")
-			for ev in ev_list:
-				ev_split = ev.split(" ")
-				EV_NUMBERS.append(int(ev_split[0]))
-				EV_TYPES.append(" ".join(ev_split[1::]))
 
 		CATCH_RATE_NUMBER = 0
 		CATCH_RATE_PERCENT = 0
@@ -98,14 +89,16 @@ def get_training_data(soup2):
 		BASE_EXP = 0
 		if len(training_selection) > 3:
 			inner_text = training_selection[3].select("td")[0].get_text(strip=True)
-			BASE_EXP = int(inner_text)
+			try:
+				BASE_EXP = int(inner_text)
+			except:
+				BASE_EXP = -1
 
 		GROWTH_RATE = ""
 		if len(training_selection) > 4:
 			GROWTH_RATE = training_selection[4].select("td")[0].get_text(strip=True)
 
-		return (EV_NUMBERS, EV_TYPES, CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, \
-		FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
+		return (CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
 
 def get_breeding_data(soup2):
 	breeding_data = soup2.select("h2:-soup-contains('Breeding') + table tbody tr")
@@ -131,16 +124,29 @@ def get_breeding_data(soup2):
 
 	egg_cycles = re.findall(r"\d[\d,]+", egg_cycles.find("td").get_text())
 
-	EGG_CYCLES_NUMBER = int(egg_cycles[0])
-	EGG_CYCLES_STEPS_MIN = int(egg_cycles[1].replace(",", ""))
-	EGG_CYCLES_STEPS_MAX = int(egg_cycles[2].replace(",", ""))
+	EGG_CYCLES_NUMBER = -1
+	EGG_CYCLES_STEPS_MIN = -1
+	EGG_CYCLES_STEPS_MAX = -1
+	
+	if egg_cycles and len(egg_cycles) >= 3:
+		EGG_CYCLES_NUMBER = int(egg_cycles[0].replace(",", ""))
+		EGG_CYCLES_STEPS_MIN = int(egg_cycles[1].replace(",", ""))
+		EGG_CYCLES_STEPS_MAX = int(egg_cycles[2].replace(",", ""))
 
-	return (EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, \
-		EGG_CYCLES_STEPS_MAX)
+	return (EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
+
+def get_moves(soup):
+	pkmn = PokemonMove()
+	return pkmn.get_moves_from_soup(soup)
 
 def scrape(download_images, start_index):
+	conn = sqlite3.connect("db/pokemon.db")
+	init_db(conn)
+
 	body = requests.get("https://pokemondb.net/pokedex/all").content
 	soup = BeautifulSoup(body, features="html.parser")
+
+	get_all_moves()
 
 	# with open('pages/pokemon.html', 'w') as file:
 	# 	file.write(BeautifulSoup.prettify(soup))
@@ -150,7 +156,8 @@ def scrape(download_images, start_index):
 	# soup = BeautifulSoup(html, features="html.parser")
  
 	pokedex_table = soup.body.find(id="pokedex").find("tbody").find_all("tr")
-	pokedex_table = pokedex_table[start_index:start_index+20]
+	if start_index != -1:
+		pokedex_table = pokedex_table[start_index::]
 
 	for idx, pokemon in enumerate(pokedex_table):
 		num, name, elements, total, hp, attack, defense, sp_att, sp_def, speed = pokemon.find_all("td")
@@ -181,35 +188,18 @@ def scrape(download_images, start_index):
 		
 		SPECIES, HEIGHT, WEIGHT, ABILITIES = get_pokedex_data(soup2)
 		
-		EV_NUMBERS, EV_TYPES, CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, \
+		CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, \
 		FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE = get_training_data(soup2)
 
-		EGG_GROUPS, GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, \
+		GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EVS, \
 		EGG_CYCLES_STEPS_MAX = get_breeding_data(soup2)
 
+		MOVES = get_moves(soup2)
 
 		# print(idx, POKEMON_NAME, SPECIES, HEIGHT, WEIGHT, EV_NUMBERS, EV_TYPES, ABILITIES, \
 		# 		f"{CATCH_RATE_NUMBER} {CATCH_RATE_PERCENT}%", FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, \
 		# 			GROWTH_RATE, EGG_GROUPS, GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, \
 		# 			EGG_CYCLES_STEPS_MAX)
-
-		SPECIES = ""
-		species_selection = soup2.select("th:-soup-contains('Species') + td")
-		if len(species_selection) > 0:
-			SPECIES = species_selection[0].get_text()
-			# new_pokemon = new_pokemon + (species, )
-		
-		HEIGHT = 0
-		height_selection = soup2.select("th:-soup-contains('Height') + td")
-		if len(height_selection) > 0:
-			height_text = height_selection[0].get_text()
-			height_text = height_text.split(" ")[0]
-			HEIGHT = float(height_text.replace("m", "").strip())
-		else:
-			print("Failed to get height")
-
-		n = EV_NUMBERS[0]
-		t = EV_TYPES[0]
 
 		new_pokemon = Pokemon(
 			int(get_tag(num, "span")), 
@@ -221,17 +211,20 @@ def scrape(download_images, start_index):
 			int(sp_att.text.strip()),
 			int(sp_def.text.strip()),
 			int(speed.text.strip()),
-			SPECIES, HEIGHT, WEIGHT, n, t, CATCH_RATE_NUMBER,
+			SPECIES, HEIGHT, WEIGHT, CATCH_RATE_NUMBER,
 			CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY,
 			BASE_EXP, GROWTH_RATE, GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT,
 			EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX,
 		)
 
-		# new_pokemon.print()
-		# print("\n")
-
 		print(f"{idx+1+start_index} - Adding {new_pokemon.to_tuple()} - {elements} to database")
-		add_pokemon_to_database(new_pokemon, elements, ABILITIES, sqlite3.connect('db/pokemon.db'))
+
+		add_pokemon_to_database(new_pokemon, elements, ABILITIES, conn)
+		get_and_add_evs_to_database(new_pokemon, soup2, conn)
+		add_abilities(new_pokemon, ABILITIES, conn)
+		add_moves_to_database(new_pokemon, MOVES, conn)
+		
+	conn.close()
 
 	# else:
 	# 	element_type = sys.argv[1].strip()

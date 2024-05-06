@@ -15,8 +15,6 @@ CREATE TABLE IF NOT EXISTS pokemon (
 	height REAL NOT NULL,
 	weight REAL NOT NULL,
 
-	-- ev_amount INTEGER NOT NULL,
-	-- ev_type VARCHAR(64) NOT NULL,
 	catch_rate_num INTEGER NOT NULL,
 	catch_rate_percent REAL NOT NULL,
 	friendship_num INTEGER NOT NULL,
