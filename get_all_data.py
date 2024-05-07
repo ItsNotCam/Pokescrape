@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 import requests, sqlite3
 
 from lib import db as DB
-from models.move import Move
-from models.ability import Ability
+from models import Move, Ability
 
 def get_tag(element, selector):
   return element.find(selector).text.strip()

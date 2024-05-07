@@ -4,9 +4,7 @@ import aiofiles as aiof
 
 import get_all_data as Data
 from lib.data_types import *
-
-from lib import pokestats as Stats
-from lib import db as DB
+from lib import pokestats, db
 
 from models.pokemon import Pokemon
 
@@ -66,19 +64,19 @@ def get_training_data(soup2):
 
 		CATCH_RATE_NUMBER = CATCH_RATE_PERCENT = 0
 		if len(training_selection) > 1:
-			CATCH_RATE_NUMBER, CATCH_RATE_PERCENT = Stats.get_catch_rate(training_selection[1])
+			CATCH_RATE_NUMBER, CATCH_RATE_PERCENT = pokestats.get_catch_rate(training_selection[1])
 
 		FRIENDSHIP_NUMBER = FRIENDSHIP_EXTREMITY = 0
 		if len(training_selection) > 2:
-			FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY = Stats.get_friendship(training_selection[2])
+			FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY = pokestats.get_friendship(training_selection[2])
 		
 		BASE_EXP = 0
 		if len(training_selection) > 3:
-			BASE_EXP = Stats.get_exp(training_selection[3])
+			BASE_EXP = pokestats.get_exp(training_selection[3])
 
 		GROWTH_RATE = ""
 		if len(training_selection) > 4:
-			GROWTH_RATE = Stats.get_growth_rate(training_selection[4])
+			GROWTH_RATE = pokestats.get_growth_rate(training_selection[4])
 
 		return TrainingData(CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
 
@@ -90,16 +88,16 @@ def get_breeding_data(soup):
 		print("\n")
 		return ("", -1, -1, -1, -1, -1)
 
-	EGG_GROUPS = Stats.get_egg_groups(breeding_data[0])
-	GENDER_MALE, GENDER_FEMALE = Stats.get_gender_data(breeding_data[1])
-	EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX = Stats.get_egg_cycles(breeding_data[2])
+	EGG_GROUPS = pokestats.get_egg_groups(breeding_data[0])
+	GENDER_MALE, GENDER_FEMALE = pokestats.get_gender_data(breeding_data[1])
+	EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX = pokestats.get_egg_cycles(breeding_data[2])
 
 	return BreedingData(EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
 
 def get_physical_data(soup):
-	POKEMON_SPECIES = Stats.get_pokemon_species(soup)
-	POKEMON_HEIGHT = Stats.get_pokemon_height(soup)
-	POKEMON_WEIGHT = Stats.get_pokemon_weight(soup)
+	POKEMON_SPECIES = pokestats.get_pokemon_species(soup)
+	POKEMON_HEIGHT = pokestats.get_pokemon_height(soup)
+	POKEMON_WEIGHT = pokestats.get_pokemon_weight(soup)
 	return PhysicalData(POKEMON_SPECIES, POKEMON_HEIGHT, POKEMON_WEIGHT)
 
 def soup_to_int(soup):
@@ -114,7 +112,7 @@ def get_img_name(name, sub_name):
 
 def scrape(download_images, start_index):
 	conn = sqlite3.connect("db/pokemon.db")
-	DB.init_db(conn)
+	db.init_db(conn)
 
 	soup = BeautifulSoup(
 		requests.get("https://pokemondb.net/pokedex/all").content, 
@@ -132,8 +130,8 @@ def scrape(download_images, start_index):
 		num_soup, name_soup, elements_soup, total_soup, hp_soup, attack_soup, \
 		defense_soup, sp_att_soup, sp_def_soup, speed_soup = pokedex_row_soup.find_all("td")
 
-		POKEMON_NAME, POKEMON_SUB_NAME = Stats.get_pokemon_name(pokedex_row_soup, name_soup)
-		POKEMON_LINK = Stats.get_pokemon_link(name_soup)
+		POKEMON_NAME, POKEMON_SUB_NAME = pokestats.get_pokemon_name(pokedex_row_soup, name_soup)
+		POKEMON_LINK = pokestats.get_pokemon_link(name_soup)
 
 		# Getting more detailed pokemon data
 		pokemon_soup = BeautifulSoup(
@@ -166,14 +164,14 @@ def scrape(download_images, start_index):
 			breeding_data
 		)
 
-		abilities = Stats.get_pokemon_abilies(pokemon_soup)
-		elements = Stats.get_pokemon_elements(elements_soup)
-		moves = Stats.get_pokemon_moves(pokemon_soup)
-		evs = Stats.get_pokemon_evs(pokemon_soup)
+		abilities = pokestats.get_pokemon_abilies(pokemon_soup)
+		elements = pokestats.get_pokemon_elements(elements_soup)
+		moves = pokestats.get_pokemon_moves(pokemon_soup)
+		evs = pokestats.get_pokemon_evs(pokemon_soup)
 
 		
 		print(f"{idx+1+int(start_index)} - Adding #{new_pokemon.number} {new_pokemon.name} to database")
-		DB.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
+		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
 		if download_images:
 			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))

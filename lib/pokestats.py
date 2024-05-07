@@ -1,4 +1,4 @@
-from models.pokemon_move import PokemonMove
+from models import PokemonMove
 import re
 
 def get_tag_all(element, selector):

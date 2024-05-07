@@ -47,14 +47,14 @@ def add_pokemon_to_database(pokemon, abilities, elements, moves, evs, conn):
 		""", (move.source, move.move_name, pokemon.number, pokemon.name, pokemon.sub_name, move.level))
 	
 	# Add evs
-	# for ev in evs:
-	# 	cursor.execute("""
-	# 		INSERT OR IGNORE INTO pokemon_evs (
-	# 			ev_name, pokemon_number, pokemon_name, pokemon_sub_name
-	# 		) VALUES (
-	# 			?, ?, ?, ?
-	# 		)
-	# 	""", (ev, pokemon.number, pokemon.name, pokemon.sub_name))
+	for ev in evs:
+		cursor.execute("""
+			INSERT OR IGNORE INTO pokemon_evs (
+				ev_name, pokemon_number, pokemon_name, pokemon_sub_name
+			) VALUES (
+				?, ?, ?, ?
+			)
+		""", (ev, pokemon.number, pokemon.name, pokemon.sub_name))
 
 	conn.commit()
 	cursor.close()

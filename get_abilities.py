@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from models.ability import Ability
+from models import Ability
 
 def add_abilities(pokemon, ability_names, conn):
 	body = requests.get(f"http://pokemondb.net/ability")
