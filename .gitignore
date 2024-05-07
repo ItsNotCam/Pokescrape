@@ -1,3 +1,6 @@
 icons/
 __pycache__/
 images/
+pages/
+*.db
+*.db.bak
