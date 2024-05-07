@@ -1,6 +1,6 @@
 import argparse, sqlite3, os
 
-from get_pokemon import scrape
+from scrape_pokemon import scrape
 from lib import db as DB
 
 def init():

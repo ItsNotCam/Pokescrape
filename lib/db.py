@@ -50,11 +50,11 @@ def add_pokemon_to_database(pokemon, abilities, elements, moves, evs, conn):
 	for ev in evs:
 		cursor.execute("""
 			INSERT OR IGNORE INTO pokemon_evs (
-				ev_name, pokemon_number, pokemon_name, pokemon_sub_name
+				ev_name, pokemon_number, pokemon_name, pokemon_sub_name, ev_amount
 			) VALUES (
-				?, ?, ?, ?
+				?, ?, ?, ?, ?
 			)
-		""", (ev, pokemon.number, pokemon.name, pokemon.sub_name))
+		""", ev.to_tuple())
 
 	conn.commit()
 	cursor.close()

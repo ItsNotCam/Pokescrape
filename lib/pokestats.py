@@ -1,4 +1,4 @@
-from models import PokemonMove
+from models import PokemonMove, PokemonEV
 import re
 
 def get_tag_all(element, selector):
@@ -53,8 +53,24 @@ def get_pokemon_moves(soup):
 
 	return moves
 
-def get_pokemon_evs(soup):
-	return False
+def get_pokemon_evs(pokemon, soup):
+	evs = []
+	ev_selection = soup.select("th:-soup-contains('EV yield') + td")
+	if len(ev_selection) > 0:
+		ev_list = ev_selection[0].get_text(strip=True).split(", ")
+		for ev in ev_list:
+			ev_split = ev.split(" ")
+			amount = int(ev_split[0])
+			name = "_".join(ev_split[1::])
+			evs.append(PokemonEV(
+				name, 
+				pokemon.number, 
+				pokemon.name, 
+				pokemon.sub_name, 
+				amount
+			))
+			
+	return evs
 
 def get_pokemon_species(soup):
 	species = ""
