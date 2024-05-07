@@ -2,7 +2,7 @@ import re
 from bs4 import BeautifulSoup
 import requests, sqlite3
 
-from dbops import add_move_to_database, add_ability_to_database
+from lib import db as DB
 from models.move import Move
 from models.ability import Ability
 
@@ -47,7 +47,7 @@ def get_all_moves():
 		)
 
 		print(f"{idx+1}) {new_move.name}: {new_move.description}")
-		add_move_to_database(new_move, conn)
+		DB.add_move_to_database(new_move, conn)
 
 	conn.close()
 
@@ -70,6 +70,6 @@ def get_all_abilities():
 		new_ability = Ability(name, description, generation) 
 
 		print(f"{idx+1}) {new_ability.name}: {new_ability.description}")
-		add_ability_to_database(new_ability, conn)
+		DB.add_ability_to_database(new_ability, conn)
 		
 	conn.close()

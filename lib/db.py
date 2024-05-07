@@ -67,3 +67,44 @@ def init_db(conn):
 			cursor.execute(sql.read())
 	conn.commit()
 	cursor.close()
+
+def add_moves_to_database(pokemon, MOVES, conn):
+	print(MOVES)
+	level_up_moveset, egg_moveset, tm_moveset = MOVES
+
+	def insert_move(source, move):
+		conn.execute("""
+			INSERT OR IGNORE INTO pokemon_moves (
+				source, move_name, pokemon_name, pokemon_sub_name, pokemon_number, level
+			) VALUES (
+				?, ?, ?, ?, ?, ?
+			)
+		""", (source, move[0], pokemon.name, pokemon.sub_name, pokemon.number, move[1]))
+
+	for move in level_up_moveset:
+		insert_move("level_up", move)
+
+	for move in egg_moveset:
+		insert_move("egg", move)
+
+	for move in tm_moveset:
+		insert_move("tm", move)
+		
+def add_move_to_database(move, conn):
+	add_element_to_database(move.element_name, conn)
+	conn.execute("""
+		INSERT OR IGNORE INTO moves (
+			name, element_name, dmg_category, power, accuracy, pp, description, probability
+		) VALUES (
+			?,?,?,?,?,?,?,?
+		)
+	""", move.to_tuple())
+	conn.commit()
+
+def add_ability_to_database(ability, conn):
+	conn.execute("INSERT OR IGNORE INTO abilities (name, description, generation) VALUES (?,?,?)", ability.to_tuple())
+	conn.commit()
+
+def add_element_to_database(element, conn):
+	conn.execute("INSERT OR IGNORE INTO elements VALUES (?)", (element, ))
+	conn.commit()
