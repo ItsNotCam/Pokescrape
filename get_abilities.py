@@ -1,9 +1,7 @@
-import requests, sqlite3
-from dbops import init_db
+import requests
 from bs4 import BeautifulSoup
-from tabulate import tabulate
 
-from objects.ability import Ability
+from models.ability import Ability
 
 def add_abilities(pokemon, ability_names, conn):
 	body = requests.get(f"http://pokemondb.net/ability")

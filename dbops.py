@@ -17,6 +17,10 @@ def entity_exists(SQL, VARS, conn):
 	cursor.close()
 	return result is not None and result[0] > 0
 
+def add_ability_to_database(ability, conn):
+	conn.execute("INSERT OR IGNORE INTO abilities (name, description, generation) VALUES (?,?,?)", ability.to_tuple())
+	conn.commit()
+
 def add_element_to_database(element, conn):
 	if not entity_exists("SELECT COUNT(*) FROM elements WHERE name=?", (element,), conn):
 		conn.execute("INSERT OR IGNORE INTO elements VALUES (?)", (element, ))
@@ -56,7 +60,7 @@ def add_pokemon_to_database(pokemon, elements, abilities, conn):
 	cursor.close()
 
 def add_move_to_database(move, conn):
-	add_element_to_database(move.element, conn)
+	add_element_to_database(move.element_name, conn)
 	conn.execute("""
 		INSERT OR IGNORE INTO moves (
 			name, element_name, dmg_category, power, accuracy, pp, description, probability

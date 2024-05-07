@@ -1,14 +1,17 @@
-import requests, sys, json, sqlite3, asyncio, os, re
-from objects.pokemon import Pokemon
-from tabulate import tabulate
+import requests, sys, sqlite3, asyncio, re
 from bs4 import BeautifulSoup
 import aiofiles as aiof
 
-from objects.pokemon_move import PokemonMove
-from dbops import init_db, add_pokemon_to_database, get_and_add_evs_to_database, add_moves_to_database
-from objects.ability import Ability
-from get_abilities import add_abilities
-from get_moves import scrape as get_all_moves
+import get_all_data as Data
+from lib.data_types.breeding_data import BreedingData
+from lib.data_types.physical_data import PhysicalData
+from lib.data_types.stats_data import PokemonStats
+from lib.data_types.training_data import TrainingData
+
+from lib import get_stats as Stats
+from lib import db as DB
+
+from models.pokemon import Pokemon
 
 loop = asyncio.get_event_loop()
 
@@ -64,181 +67,121 @@ def get_pokedex_data(soup2):
 def get_training_data(soup2):
 		training_selection = soup2.select("h2:-soup-contains('Training') + table tr")
 
-		CATCH_RATE_NUMBER = 0
-		CATCH_RATE_PERCENT = 0
+		CATCH_RATE_NUMBER = CATCH_RATE_PERCENT = 0
 		if len(training_selection) > 1:
-			inner_text = training_selection[1].select("td")[0].get_text(strip=True)
-			match = re.match(r"(\d{0,})\((\d{0,}.\d)%", inner_text)
-			if match is not None:
-				groups = match.groups()
-				CATCH_RATE_NUMBER = int(groups[0])
-				CATCH_RATE_PERCENT = float(groups[1])
+			CATCH_RATE_NUMBER, CATCH_RATE_PERCENT = Stats.get_catch_rate(training_selection[1])
 
-		FRIENDSHIP_NUMBER = 0
-		FRIENDSHIP_EXTREMITY = 0
+		FRIENDSHIP_NUMBER = FRIENDSHIP_EXTREMITY = 0
 		if len(training_selection) > 2:
-			inner_text = training_selection[2].select("td")[0].get_text(strip=True)
-			match = re.match(r"(\d{0,}).\((\w{0,})\)", inner_text)
-			if match is not None:
-				groups = match.groups()
-				FRIENDSHIP_NUMBER = int(groups[0])
-				FRIENDSHIP_EXTREMITY = groups[1].strip()
-			else:
-				print("No Match for friendship section")
+			FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY = Stats.get_friendship(training_selection[2])
 		
 		BASE_EXP = 0
 		if len(training_selection) > 3:
-			inner_text = training_selection[3].select("td")[0].get_text(strip=True)
-			try:
-				BASE_EXP = int(inner_text)
-			except:
-				BASE_EXP = -1
+			BASE_EXP = Stats.get_exp(training_selection[3])
 
 		GROWTH_RATE = ""
 		if len(training_selection) > 4:
-			GROWTH_RATE = training_selection[4].select("td")[0].get_text(strip=True)
+			GROWTH_RATE = Stats.get_growth_rate(training_selection[4])
 
-		return (CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
+		return TrainingData(CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
 
-def get_breeding_data(soup2):
-	breeding_data = soup2.select("h2:-soup-contains('Breeding') + table tbody tr")
+def get_breeding_data(soup):
+	breeding_data = soup.select("h2:-soup-contains('Breeding') + table tbody tr")
 	if breeding_data is None or len(breeding_data) < 3:
 		print("Weird reeding data found | len:", len(breeding_data))
 		print("\n".join(["'" + b.get_text(strip=True) + "'" for b in breeding_data]))
 		print("\n")
 		return ("", -1, -1, -1, -1, -1)
 
-	egg_groups, gender, egg_cycles = breeding_data[0:3]
+	EGG_GROUPS = Stats.get_egg_groups(breeding_data[0])
+	GENDER_MALE, GENDER_FEMALE = Stats.get_gender_data(breeding_data[1])
+	EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX = Stats.get_egg_cycles(breeding_data[2])
 
-	EGG_GROUPS = egg_groups.find("a").get_text(strip=True)
-	
-	GENDER_MALE = 0
-	GENDER_FEMALE = 0
-	genders = re.findall(r"(?:(\d+)|(\d+\.\d+))% (male|female)", gender.find("td").get_text(strip=True))
-	for gender in genders:
-		percentage, name = [g for g in gender if len(g) > 0]
-		if name == 'female':
-			GENDER_FEMALE = float(percentage)
-		else:
-			GENDER_MALE = float(percentage)
+	return BreedingData(EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
 
-	egg_cycles = re.findall(r"\d[\d,]+", egg_cycles.find("td").get_text())
+def get_physical_data(soup):
+	POKEMON_SPECIES = Stats.get_pokemon_species(soup)
+	POKEMON_HEIGHT = Stats.get_pokemon_height(soup)
+	POKEMON_WEIGHT = Stats.get_pokemon_weight(soup)
+	return PhysicalData(POKEMON_SPECIES, POKEMON_HEIGHT, POKEMON_WEIGHT)
 
-	EGG_CYCLES_NUMBER = -1
-	EGG_CYCLES_STEPS_MIN = -1
-	EGG_CYCLES_STEPS_MAX = -1
-	
-	if egg_cycles and len(egg_cycles) >= 3:
-		EGG_CYCLES_NUMBER = int(egg_cycles[0].replace(",", ""))
-		EGG_CYCLES_STEPS_MIN = int(egg_cycles[1].replace(",", ""))
-		EGG_CYCLES_STEPS_MAX = int(egg_cycles[2].replace(",", ""))
+def soup_to_int(soup):
+	return int(soup.get_text(strip=True))
 
-	return (EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
-
-def get_moves(soup):
-	pkmn = PokemonMove()
-	return pkmn.get_moves_from_soup(soup)
+def get_img_name(name, sub_name):
+	img_name = f"{name}"
+	if sub_name is not None and len(sub_name) > 0:
+		sub_name_cleaned = sub_name.replace(" ", "_").strip()
+		img_name = f"{name}_{sub_name_cleaned}"
+	return f"{img_name.lower()}.png"
 
 def scrape(download_images, start_index):
 	conn = sqlite3.connect("db/pokemon.db")
-	init_db(conn)
+	DB.init_db(conn)
 
-	body = requests.get("https://pokemondb.net/pokedex/all").content
-	soup = BeautifulSoup(body, features="html.parser")
-
-	get_all_moves()
-
-	# with open('pages/pokemon.html', 'w') as file:
-	# 	file.write(BeautifulSoup.prettify(soup))
-	# html = ""
-	# with open('pages/pokemon.html', 'r') as file:
-	# 	html = file.read()
-	# soup = BeautifulSoup(html, features="html.parser")
+	soup = BeautifulSoup(
+		requests.get("https://pokemondb.net/pokedex/all").content, 
+		features="html.parser"
+	)
  
-	pokedex_table = soup.body.find(id="pokedex").find("tbody").find_all("tr")
-	if start_index != -1:
-		pokedex_table = pokedex_table[start_index::]
+	Data.get_all_moves()
+	Data.get_all_abilities()
+ 
+	pokedex_table = soup.body.find(id="pokedex").find("tbody").find_all("tr")[1:200]
+	# if start_index != -1:
+	# 	pokedex_table = pokedex_table[start_index::]
 
-	for idx, pokemon in enumerate(pokedex_table):
-		num, name, elements, total, hp, attack, defense, sp_att, sp_def, speed = pokemon.find_all("td")
-		
-		# Get small subtitle name
-		name_small_element = pokemon.find("small")
-		sub_name = ""
-		if name_small_element is not None and len(name_small_element) > 0:
-			sub_name = name_small_element.text.strip()
+	for idx, pokedex_row_soup in enumerate(pokedex_table):
+		num_soup, name_soup, elements_soup, total_soup, hp_soup, attack_soup, \
+		defense_soup, sp_att_soup, sp_def_soup, speed_soup = pokedex_row_soup.find_all("td")
 
-		elements = [e.lower() for e in get_tag_all(elements, "a")]
-		POKEMON_NAME, pokemon_link = (get_tag(name, "a").lower(), name.find("a")["href"])
-		
-		img_name = f"{POKEMON_NAME}".lower()
-		if sub_name is not None and len(sub_name) > 0:
-			sub_name_cleaned = sub_name.replace(" ", "_").strip()
-			img_name = f"{POKEMON_NAME}_{sub_name_cleaned}".lower()
-		
-		if download_images:
-			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{pokemon_link}"))
-			loop.run_until_complete(download_image(num.find("picture").find("img")["src"], f"icons/{img_name}.png"))
-
-		POKEMON_NAME, pokemon_link = (get_tag(name, "a").lower(), name.find("a")["href"])
+		POKEMON_NAME, POKEMON_SUB_NAME = Stats.get_pokemon_name(pokedex_row_soup, name_soup)
+		POKEMON_LINK = Stats.get_pokemon_link(name_soup)
 
 		# Getting more detailed pokemon data
-		body2 = requests.get(f"https://pokemondb.net{pokemon_link}").content
-		soup2 = BeautifulSoup(body2, features="html.parser")
+		pokemon_soup = BeautifulSoup(
+			requests.get(f"https://pokemondb.net{POKEMON_LINK}").content, 
+			features="html.parser"
+		)
 		
-		SPECIES, HEIGHT, WEIGHT, ABILITIES = get_pokedex_data(soup2)
-		
-		CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, \
-		FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE = get_training_data(soup2)
+		stats_data = PokemonStats(
+			soup_to_int(total_soup), 
+			soup_to_int(hp_soup),
+			soup_to_int(attack_soup),
+			soup_to_int(defense_soup),
+			soup_to_int(sp_att_soup),
+			soup_to_int(sp_def_soup),
+			soup_to_int(speed_soup),
+		)
+		physical_data = get_physical_data(pokemon_soup)
+		training_data = get_training_data(pokemon_soup)
+		breeding_data = get_breeding_data(pokemon_soup)
 
-		GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EVS, \
-		EGG_CYCLES_STEPS_MAX = get_breeding_data(soup2)
-
-		MOVES = get_moves(soup2)
-
-		# print(idx, POKEMON_NAME, SPECIES, HEIGHT, WEIGHT, EV_NUMBERS, EV_TYPES, ABILITIES, \
-		# 		f"{CATCH_RATE_NUMBER} {CATCH_RATE_PERCENT}%", FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, \
-		# 			GROWTH_RATE, EGG_GROUPS, GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, \
-		# 			EGG_CYCLES_STEPS_MAX)
-
+		img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
 		new_pokemon = Pokemon(
-			int(get_tag(num, "span")), 
-			POKEMON_NAME, sub_name, f"{img_name}.png",
-			int(total.text.strip()),
-			int(hp.text.strip()),
-			int(attack.text.strip()),
-			int(defense.text.strip()),
-			int(sp_att.text.strip()),
-			int(sp_def.text.strip()),
-			int(speed.text.strip()),
-			SPECIES, HEIGHT, WEIGHT, CATCH_RATE_NUMBER,
-			CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY,
-			BASE_EXP, GROWTH_RATE, GENDER_MALE_PERCENT, GENDER_FEMALE_PERCENT,
-			EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX,
+			int(get_tag(num_soup, "span")), 
+			POKEMON_NAME, 
+			POKEMON_SUB_NAME, 
+			img_name,
+			stats_data,
+			physical_data,
+			training_data,
+			breeding_data
 		)
 
-		print(f"{idx+1+start_index} - Adding {new_pokemon.to_tuple()} - {elements} to database")
+		abilities = Stats.get_pokemon_abilies(pokemon_soup)
+		elements = Stats.get_pokemon_elements(elements_soup)
+		moves = Stats.get_pokemon_moves(pokemon_soup)
+		evs = Stats.get_pokemon_evs(pokemon_soup)
 
-		add_pokemon_to_database(new_pokemon, elements, ABILITIES, conn)
-		get_and_add_evs_to_database(new_pokemon, soup2, conn)
-		add_abilities(new_pokemon, ABILITIES, conn)
-		add_moves_to_database(new_pokemon, MOVES, conn)
+		print(f"{idx+1+int(start_index)} - Adding #{new_pokemon.number} {new_pokemon.name} to database")
+		DB.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
+
+		if download_images:
+			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))
+			loop.run_until_complete(download_image(num_soup.find("picture").find("img")["src"], f"icons/{img_name}.png"))
 		
 	conn.close()
-
-	# else:
-	# 	element_type = sys.argv[1].strip()
-	# 	cursor = conn.cursor()
-	# 	rows = cursor.execute("""
-	# 		SELECT p.number, p.name || " " || p.sub_name as 'full name', GROUP_CONCAT(pt.element_name, ","), 
-	# 			p.attack, p.defense, p.special_attack, p.special_defense, p.speed, p.hp
-	# 		FROM pokemon as p
-	# 		JOIN pokemon_type as pt ON pt.pokemon_number = p.number AND pt.pokemon_name = p.name AND pt.pokemon_sub_name = p.sub_name
-	# 		GROUP BY p.number, p.name, p.sub_name
-	# 		ORDER BY MAX(p.hp) ASC LIMIT 50
-	# 	""").fetchall()
-
-	# 	print(f"All {len(rows)} {element_type} types")
-	# 	print(tabulate(rows, headers=['#', 'Name', 'Elements', 'Att', 'Def', 'Sp.Att.', 'Sp.Def.', 'Speed', 'HP'], tablefmt='pretty', stralign='left'))
-
-	# 	cursor.close()
+ 
+if __name__ == "__main__":
+	scrape(False, sys.argv[1])

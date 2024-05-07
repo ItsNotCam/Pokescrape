@@ -1,8 +1,7 @@
 import argparse, sqlite3, os
 
-from get_moves import scrape as scrape_moves
-from get_pokemon import scrape as scrape_pokemon
-from dbops import init_db
+from get_pokemon import scrape
+from lib import db as DB
 
 def init():
 	if not os.path.exists("icons"):
@@ -16,7 +15,9 @@ def init():
 	if not os.path.exists("db"):
 		os.mkdir("db")
 
-	init_db(sqlite3.connect("db/pokemon.db"))
+	conn = sqlite3.connect("db/pokemon.db")
+	DB.init_db(conn)
+	conn.close()
 
 def main():
 	init()
@@ -28,10 +29,11 @@ def main():
 
 	args = parser.parse_args()
 
-	if args.pokemon:
-		scrape_pokemon(download_images=args.imgs, start_index=args.pokemon)
-	if args.moves:
-		scrape_moves(args.moves)
+	scrape(download_images=args.imgs, start_index=args.pokemon)
+	# if args.pokemon:
+	# 	scrape_pokemon(download_images=args.imgs, start_index=args.pokemon)
+	# if args.moves:
+	# 	scrape_moves(args.moves)
 
 if __name__ == '__main__':
 	main()
