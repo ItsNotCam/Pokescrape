@@ -1,4 +1,4 @@
-class PokemonStats:
+class PokemonStatsData:
 	def __init__(self, total, hp, attack, defense, special_attack, special_defense, speed):
 		self.total = total
 		self.hp = hp

@@ -3,12 +3,9 @@ from bs4 import BeautifulSoup
 import aiofiles as aiof
 
 import get_all_data as Data
-from lib.data_types.breeding_data import BreedingData
-from lib.data_types.physical_data import PhysicalData
-from lib.data_types.stats_data import PokemonStats
-from lib.data_types.training_data import TrainingData
+from lib.data_types import *
 
-from lib import get_stats as Stats
+from lib import pokestats as Stats
 from lib import db as DB
 
 from models.pokemon import Pokemon
@@ -144,7 +141,7 @@ def scrape(download_images, start_index):
 			features="html.parser"
 		)
 		
-		stats_data = PokemonStats(
+		stats_data = PokemonStatsData(
 			soup_to_int(total_soup), 
 			soup_to_int(hp_soup),
 			soup_to_int(attack_soup),
@@ -174,6 +171,7 @@ def scrape(download_images, start_index):
 		moves = Stats.get_pokemon_moves(pokemon_soup)
 		evs = Stats.get_pokemon_evs(pokemon_soup)
 
+		
 		print(f"{idx+1+int(start_index)} - Adding #{new_pokemon.number} {new_pokemon.name} to database")
 		DB.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
