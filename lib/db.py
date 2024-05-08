@@ -69,7 +69,6 @@ def init_db(conn):
 	cursor.close()
 
 def add_moves_to_database(pokemon, MOVES, conn):
-	print(MOVES)
 	level_up_moveset, egg_moveset, tm_moveset = MOVES
 
 	def insert_move(source, move):

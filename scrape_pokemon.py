@@ -2,7 +2,7 @@ import requests, sys, sqlite3, asyncio, re
 from bs4 import BeautifulSoup
 import aiofiles as aiof
 
-import get_all_data as Data
+import get_all_data as GetData
 from lib.data_types import *
 from lib import pokestats, db
 
@@ -110,7 +110,7 @@ def get_img_name(name, sub_name):
 		img_name = f"{name}_{sub_name_cleaned}"
 	return f"{img_name.lower()}.png"
 
-def scrape(download_images, start_index):
+def scrape(download_icons=False, download_images=False, start_number=None, end_number=None):
 	conn = sqlite3.connect("db/pokemon.db")
 	db.init_db(conn)
 
@@ -119,16 +119,17 @@ def scrape(download_images, start_index):
 		features="html.parser"
 	)
  
-	Data.get_all_moves()
-	Data.get_all_abilities()
- 
-	pokedex_table = soup.body.find(id="pokedex").find("tbody").find_all("tr")[1:200]
-	# if start_index != -1:
-	# 	pokedex_table = pokedex_table[start_index::]
+	pokedex_table = soup.body.find(id="pokedex").find("tbody").find_all("tr")
 
-	for idx, pokedex_row_soup in enumerate(pokedex_table):
+	for pokedex_row_soup in pokedex_table:
 		num_soup, name_soup, elements_soup, total_soup, hp_soup, attack_soup, \
 		defense_soup, sp_att_soup, sp_def_soup, speed_soup = pokedex_row_soup.find_all("td")
+
+		POKEMON_NUMBER = int(get_tag(num_soup, "span"))
+		if start_number and POKEMON_NUMBER < start_number:
+			continue
+		if end_number and POKEMON_NUMBER > end_number:
+			return
 
 		POKEMON_NAME, POKEMON_SUB_NAME = pokestats.get_pokemon_name(pokedex_row_soup, name_soup)
 		POKEMON_LINK = pokestats.get_pokemon_link(name_soup)
@@ -154,7 +155,7 @@ def scrape(download_images, start_index):
 
 		img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
 		new_pokemon = Pokemon(
-			int(get_tag(num_soup, "span")), 
+			POKEMON_NUMBER, 
 			POKEMON_NAME, 
 			POKEMON_SUB_NAME, 
 			img_name,
@@ -168,13 +169,13 @@ def scrape(download_images, start_index):
 		elements = pokestats.get_pokemon_elements(elements_soup)
 		moves = pokestats.get_pokemon_moves(pokemon_soup)
 		evs = pokestats.get_pokemon_evs(new_pokemon, pokemon_soup)
-
 		
-		print(f"{idx+1+int(start_index)} - Adding #{new_pokemon.number} {new_pokemon.name} to database")
+		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
 		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
 		if download_images:
 			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))
+		if download_icons:
 			loop.run_until_complete(download_image(num_soup.find("picture").find("img")["src"], f"icons/{img_name}.png"))
 		
 	conn.close()

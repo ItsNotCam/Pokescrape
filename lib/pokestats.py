@@ -1,6 +1,8 @@
 from models import PokemonMove, PokemonEV
 import re
 
+from bs4 import BeautifulSoup
+
 def get_tag_all(element, selector):
   return [e.text.strip() for e in element.find_all(selector)]
 
@@ -20,25 +22,42 @@ def get_pokemon_elements(soup):
 	return [e.lower() for e in get_tag_all(soup, "a")]
 
 def get_pokemon_moves(soup):
-	level_up_moves_soup = soup.find(text="Moves learnt by level up")\
-			.parent.parent.select("tbody tr")
-	egg_moves_soup = soup.find(text="Egg moves")\
-		.parent.parent.select("tbody tr")
-	tm_moves_soup = soup.find(text="Moves learnt by TM")\
-		.parent.parent.select("tbody tr")
-	
-	moves = []
-	
+	level_up_moves_soup = []
+	egg_moves_soup = []
+	tm_moves_soup = []
+
+	h3s = soup.find_all("h3")
+	for h3 in h3s:
+		txt = h3.get_text(strip=True)
+		if txt == "Moves learnt by level up":
+			s = h3.find_next_sibling("div") #, class_="resp-scroll"
+			if s:
+				level_up_moves_soup = s.select("tbody tr")
+		if txt == "Egg moves":
+			s = h3.find_next_sibling("div") #, class_="resp-scroll"
+			if s:
+				egg_moves_soup = s.select("tbody tr")
+		if txt == "Moves learnt by TM":
+			s = h3.find_next_sibling("div") #, class_="resp-scroll"
+			if s:
+				tm_moves_soup = s.select("tbody tr")
+
+	all_moves = []
 	for move in level_up_moves_soup:
 		name = move.find("a").get_text(strip=True)
 		level = move.find_all("td")[0].get_text()
-		moves.append(
-			PokemonMove(-1, "Level Up", name, "", "", "", level)
-		)
+		try:
+			level = int(level)
+			all_moves.append(
+				PokemonMove(-1, "Level Up", name, "", "", "", level)
+			)
+		except:
+			print("failed to parse level number from move", level)
+			level = -999
 
 	for move in egg_moves_soup:
 		name = move.find("a").get_text(strip=True)
-		moves.append(
+		all_moves.append(
 			PokemonMove(-1, "Egg", name, "", "", "", -1)
 		)
 
@@ -47,11 +66,11 @@ def get_pokemon_moves(soup):
 		name_soup = move.find_all("a")
 		if name_soup:
 			name = name_soup[1].get_text(strip=True)
-		moves.append(
+		all_moves.append(
 			PokemonMove(-1, "TM", name, "", "", "", -1)
 		)
 
-	return moves
+	return all_moves
 
 def get_pokemon_evs(pokemon, soup):
 	evs = []
@@ -69,7 +88,7 @@ def get_pokemon_evs(pokemon, soup):
 				pokemon.sub_name, 
 				amount
 			))
-			
+
 	return evs
 
 def get_pokemon_species(soup):
@@ -155,17 +174,31 @@ def get_egg_cycles(soup):
 	return (EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
 
 def get_gender_data(soup):
-	gender_text = soup.find("td").get_text(strip=True)
-	genders = re.findall(r"(?:(\d+)|(\d+\.\d+))% (male|female)", gender_text)
+	def convert_to(val, type):
+		try:
+			return type(val)
+		except:
+			return -1
 
-	GENDER_MALE = 0
-	GENDER_FEMALE = 0
-	for gender in genders:
-		percentage = gender[0]
-		name = gender[1]
-		if name == 'female' and len(percentage) > 0:
-			GENDER_FEMALE = float(percentage)
-		elif name == 'male' and len(percentage) > 0:
-			GENDER_MALE = float(percentage)
-		
+	gender_text = soup.find("td").get_text(strip=True)
+
+	gender_matches = re.findall(r"(?:(\d+)|(\d+\.\d+))% (male|female)", gender_text)
+	GENDER_MALE = -1
+	GENDER_FEMALE = -1
+
+	for matches in gender_matches:
+		int_val, float_val, gender = matches
+
+		if gender == 'male':
+			if len(int_val) > 0:
+				GENDER_MALE = convert_to(int_val, int)
+			elif len(float_val) > 0:
+				GENDER_MALE = convert_to(float_val, float)
+
+		elif gender == 'female':
+			if len(int_val) > 0:
+				GENDER_FEMALE = convert_to(int_val, int)
+			elif len(float_val) > 0:
+				GENDER_FEMALE = convert_to(float_val, float)
+	
 	return (GENDER_MALE, GENDER_FEMALE)

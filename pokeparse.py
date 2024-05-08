@@ -1,5 +1,6 @@
 import argparse, sqlite3, os
 
+import get_all_data as GetData
 from scrape_pokemon import scrape
 from lib import db as DB
 
@@ -23,17 +24,28 @@ def main():
 	init()
 
 	parser = argparse.ArgumentParser(description='Description of your script.')
-	parser.add_argument('-pokemon', type=int, help='Get Pokemon')
-	parser.add_argument('-moves', type=int, help='Get Moves')
-	parser.add_argument('-imgs', action='store_true', help='Download images')
+
+	parser.add_argument('-p', '--pokemon', action='store_true', help='Get Pokemon')
+	parser.add_argument('-ps', '--pstart', type=int, help='The pokemon number to start at')
+	parser.add_argument('-pe','--pend', type=int, help='The pokemon number to end at')
+
+	parser.add_argument('-m', '--moves', action='store_true', help='Get Moves')
+	parser.add_argument('-a', '--abilities', action='store_true', help='Get Abilities')
+	parser.add_argument('-icons', action='store_true', help='Download Icons')
+	parser.add_argument('-images', action='store_true', help='Download Images')
 
 	args = parser.parse_args()
 
-	scrape(download_images=args.imgs, start_index=args.pokemon)
-	# if args.pokemon:
-	# 	scrape_pokemon(download_images=args.imgs, start_index=args.pokemon)
-	# if args.moves:
-	# 	scrape_moves(args.moves)
+	if args.moves:
+		GetData.get_all_moves()
+	
+	if args.abilities:
+		GetData.get_all_abilities()
+	
+	if args.pokemon:
+		start_number = args.pstart or None
+		end_number = args.pend or None
+		scrape(args.icons, args.images, start_number, end_number)
 
 if __name__ == '__main__':
 	main()
