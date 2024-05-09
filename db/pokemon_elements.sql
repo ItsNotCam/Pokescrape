@@ -10,4 +10,10 @@ CREATE TABLE IF NOT EXISTS pokemon_elements (
   FOREIGN KEY (pokemon_sub_name) REFERENCES pokemon(sub_name),
 
 	PRIMARY KEY (element_name, pokemon_number, pokemon_name, pokemon_sub_name)
-)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_element_name ON pokemon_elements (element_name);
+CREATE INDEX IF NOT EXISTS idx_elements_pokemon_number ON pokemon_elements (pokemon_number);
+CREATE INDEX IF NOT EXISTS idx_elements_pokemon_name ON pokemon_elements (pokemon_name);
+CREATE INDEX IF NOT EXISTS idx_elements_pokemon_sub_name ON pokemon_elements (pokemon_sub_name);

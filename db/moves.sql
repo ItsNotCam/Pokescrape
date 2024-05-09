@@ -7,5 +7,9 @@ CREATE TABLE IF NOT EXISTS moves (
   pp INTEGER NOT NULL,
   description TEXT NOT NULL,
   probability INTEGER,
+	
   FOREIGN KEY (element_name) REFERENCES elements(name)
-)
+);
+
+CREATE INDEX IF NOT EXISTS idx_moves_name ON moves (name);
+CREATE INDEX IF NOT EXISTS idx_moves_element_name ON moves (element_name)

@@ -29,4 +29,9 @@ CREATE TABLE IF NOT EXISTS pokemon (
 	egg_cycles_steps_max INTEGER,
 
   PRIMARY KEY (name, sub_name)
-)
+);
+
+CREATE INDEX IF NOT EXISTS idx_number ON pokemon (number);
+CREATE INDEX IF NOT EXISTS idx_pokemon_name ON pokemon (name);
+CREATE INDEX IF NOT EXISTS idx_pokemon_sub_name ON pokemon (sub_name);
+CREATE INDEX IF NOT EXISTS idx_species ON pokemon (species);

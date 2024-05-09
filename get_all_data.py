@@ -1,6 +1,5 @@
-import re
 from bs4 import BeautifulSoup
-import requests, sqlite3
+import requests, sqlite3, re
 
 from lib import db as DB
 from models import Move, Ability
@@ -72,3 +71,29 @@ def get_all_abilities():
 		DB.add_ability_to_database(new_ability, conn)
 		
 	conn.close()
+
+def get_dmg_effectiveness():
+
+	print("\nGetting damage effectiveness")
+	
+	URL = "https://pokemondb.net/type"
+	body = requests.get(URL).content
+	soup = BeautifulSoup(body, features="html.parser")
+
+	conn = sqlite3.connect("db/pokemon.db")
+	DB.init_db(conn)
+
+	type_effectiveness_soup = soup.select(".type-fx-cell")
+	for eff_soup in type_effectiveness_soup:
+		effect = eff_soup.get("title")
+		dmg_src, dmg_dst, effect = re.match(r"(?:(.*) → (.*)) = (.*)", effect).groups()
+
+		if effect == 'normal effectiveness':
+			effect = 'normal'
+		
+		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect, conn)
+	
+	conn.close()
+
+if __name__ == '__main__':
+	get_dmg_effectiveness()

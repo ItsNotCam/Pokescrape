@@ -64,7 +64,8 @@ def init_db(conn):
 	sql_files = [f for f in os.listdir("db") if ".sql" in f]
 	for sql_file in sql_files:
 		with open(f'db/{sql_file}') as sql:
-			cursor.execute(sql.read())
+			print("Reading from", sql_file)
+			cursor.executescript(sql.read())
 	conn.commit()
 	cursor.close()
 
@@ -106,4 +107,14 @@ def add_ability_to_database(ability, conn):
 
 def add_element_to_database(element, conn):
 	conn.execute("INSERT OR IGNORE INTO elements VALUES (?)", (element, ))
+	conn.commit()
+
+def add_dmg_effectiveness(dmg_src, dmg_dest, effect, conn):
+	conn.execute("""
+		INSERT OR IGNORE INTO move_effectiveness (
+			dmg_source, dmg_dest, effectiveness
+		) VALUES (
+			?,?,?
+		)
+	""", (dmg_src, dmg_dest, effect))
 	conn.commit()

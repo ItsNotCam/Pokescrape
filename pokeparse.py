@@ -33,6 +33,7 @@ def main():
 
 	parser.add_argument('-m', '--moves', action='store_true', help='Get Moves')
 	parser.add_argument('-a', '--abilities', action='store_true', help='Get Abilities')
+	parser.add_argument('-dmg', '--damage', action='store_true', help='Get Damage Effectiveness')
 	parser.add_argument('-icons', action='store_true', help='Download Icons')
 	parser.add_argument('-images', action='store_true', help='Download Images')
 
@@ -43,6 +44,9 @@ def main():
 	
 	if args.abilities:
 		GetData.get_all_abilities()
+
+	if args.damage:
+		GetData.get_dmg_effectiveness()
 	
 	if args.pokemon:
 		start_number = args.pstart or None

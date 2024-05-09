@@ -173,7 +173,6 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 		
 		print("--------------------------------------")
 		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
-		print("--------------------------------------\n")
 		if debug:
 			abilities_str = ", ".join(abilities)
 			elements_str = ", ".join(elements)
@@ -188,10 +187,13 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 				tablefmt="outline"
 			)
 
+			print("")
 			print(f"ABILITIES: {abilities_str}\n")
 			print(f"ELEMENTS: {elements_str}\n")
 			print(f"EVS:\n{ev_str}\n\n")
 			print(f"MOVES:\n{moves_str}\n")
+
+		print("--------------------------------------\n")
 
 		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 

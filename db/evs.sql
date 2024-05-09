@@ -1,3 +1,5 @@
 CREATE TABLE IF NOT EXISTS evs (
 	name VARCHAR(64) PRIMARY KEY
-)
+);
+
+CREATE INDEX IF NOT EXISTS idx_evs_name ON evs (name);
