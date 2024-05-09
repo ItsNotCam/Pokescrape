@@ -171,7 +171,9 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 		moves = pokestats.get_pokemon_moves(pokemon_soup)
 		evs = pokestats.get_pokemon_evs(new_pokemon, pokemon_soup)
 		
+		print("--------------------------------------")
 		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
+		print("--------------------------------------\n")
 		if debug:
 			abilities_str = ", ".join(abilities)
 			elements_str = ", ".join(elements)
@@ -186,10 +188,10 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 				tablefmt="outline"
 			)
 
-			print(f"ABILITIES:\n{abilities_str}\n")
-			print(f"ELEMENTS:\n{elements_str}\n")
-			print(f"MOVES:\n{moves_str}\n")
+			print(f"ABILITIES: {abilities_str}\n")
+			print(f"ELEMENTS: {elements_str}\n")
 			print(f"EVS:\n{ev_str}\n\n")
+			print(f"MOVES:\n{moves_str}\n")
 
 		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
