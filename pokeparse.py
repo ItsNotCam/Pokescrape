@@ -29,6 +29,8 @@ def main():
 	parser.add_argument('-ps', '--pstart', type=int, help='The pokemon number to start at')
 	parser.add_argument('-pe','--pend', type=int, help='The pokemon number to end at')
 
+	parser.add_argument('-d', '--debug', action='store_true', help='Show detailed debug')
+
 	parser.add_argument('-m', '--moves', action='store_true', help='Get Moves')
 	parser.add_argument('-a', '--abilities', action='store_true', help='Get Abilities')
 	parser.add_argument('-icons', action='store_true', help='Download Icons')
@@ -45,7 +47,8 @@ def main():
 	if args.pokemon:
 		start_number = args.pstart or None
 		end_number = args.pend or None
-		scrape(args.icons, args.images, start_number, end_number)
+		debug = args.debug or False
+		scrape(args.icons, args.images, start_number, end_number, debug)
 
 if __name__ == '__main__':
 	main()

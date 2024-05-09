@@ -74,20 +74,20 @@ def add_moves_to_database(pokemon, MOVES, conn):
 	def insert_move(source, move):
 		conn.execute("""
 			INSERT OR IGNORE INTO pokemon_moves (
-				source, move_name, pokemon_name, pokemon_sub_name, pokemon_number, level
+				source, move_name, pokemon_number, pokemon_name, pokemon_sub_name, level
 			) VALUES (
 				?, ?, ?, ?, ?, ?
 			)
-		""", (source, move[0], pokemon.name, pokemon.sub_name, pokemon.number, move[1]))
+		""", (source, move[0], pokemon.number, pokemon.name, pokemon.sub_name, move[1]))
 
 	for move in level_up_moveset:
-		insert_move("level_up", move)
+		insert_move("Level Up", move)
 
 	for move in egg_moveset:
-		insert_move("egg", move)
+		insert_move("Egg", move)
 
 	for move in tm_moveset:
-		insert_move("tm", move)
+		insert_move("TM", move)
 		
 def add_move_to_database(move, conn):
 	add_element_to_database(move.element_name, conn)

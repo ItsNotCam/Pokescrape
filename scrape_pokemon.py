@@ -1,6 +1,7 @@
 import requests, sys, sqlite3, asyncio, re
 from bs4 import BeautifulSoup
 import aiofiles as aiof
+from tabulate import tabulate
 
 import get_all_data as GetData
 from lib.data_types import *
@@ -86,7 +87,7 @@ def get_breeding_data(soup):
 		print("Weird reeding data found | len:", len(breeding_data))
 		print("\n".join(["'" + b.get_text(strip=True) + "'" for b in breeding_data]))
 		print("\n")
-		return ("", -1, -1, -1, -1, -1)
+		return (None, None, None, None, None, None)
 
 	EGG_GROUPS = pokestats.get_egg_groups(breeding_data[0])
 	GENDER_MALE, GENDER_FEMALE = pokestats.get_gender_data(breeding_data[1])
@@ -110,7 +111,7 @@ def get_img_name(name, sub_name):
 		img_name = f"{name}_{sub_name_cleaned}"
 	return f"{img_name.lower()}.png"
 
-def scrape(download_icons=False, download_images=False, start_number=None, end_number=None):
+def scrape(download_icons=False, download_images=False, start_number=None, end_number=None, debug=False):
 	conn = sqlite3.connect("db/pokemon.db")
 	db.init_db(conn)
 
@@ -171,6 +172,25 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 		evs = pokestats.get_pokemon_evs(new_pokemon, pokemon_soup)
 		
 		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
+		if debug:
+			abilities_str = ", ".join(abilities)
+			elements_str = ", ".join(elements)
+			moves_str = tabulate(
+				[m.to_tuple() for m in moves], 
+				headers= ["Source", "Name", "Level"], 
+				tablefmt="outline"
+			)
+			ev_str = tabulate(
+				[ev.to_tuple() for ev in evs], 
+				headers=["Name", "pkmn #", "pkmn name", "pkmn subname", "Amount"], 
+				tablefmt="outline"
+			)
+
+			print(f"ABILITIES:\n{abilities_str}\n")
+			print(f"ELEMENTS:\n{elements_str}\n")
+			print(f"MOVES:\n{moves_str}\n")
+			print(f"EVS:\n{ev_str}\n\n")
+
 		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
 		if download_images:

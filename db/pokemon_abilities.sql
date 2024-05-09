@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS pokemon_abilities (
 	ability_name VARCHAR(64),
-	pokemon_number INTEGER,
+	pokemon_number VARCHAR(64),
 	pokemon_name VARCHAR(64),
 	pokemon_sub_name VARCHAR(64),
 

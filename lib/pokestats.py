@@ -19,7 +19,7 @@ def get_pokemon_abilies(soup):
 	return ability_names
 
 def get_pokemon_elements(soup):
-	return [e.lower() for e in get_tag_all(soup, "a")]
+	return [e for e in get_tag_all(soup, "a")]
 
 def get_pokemon_moves(soup):
 	level_up_moves_soup = []
@@ -49,7 +49,7 @@ def get_pokemon_moves(soup):
 		try:
 			level = int(level)
 			all_moves.append(
-				PokemonMove(-1, "Level Up", name, "", "", "", level)
+				PokemonMove("Level Up", name, level)
 			)
 		except:
 			print("failed to parse level number from move", level)
@@ -58,16 +58,16 @@ def get_pokemon_moves(soup):
 	for move in egg_moves_soup:
 		name = move.find("a").get_text(strip=True)
 		all_moves.append(
-			PokemonMove(-1, "Egg", name, "", "", "", -1)
+			PokemonMove("Egg", name, None)
 		)
 
 	for move in tm_moves_soup:
-		name = ""
+		name = None
 		name_soup = move.find_all("a")
 		if name_soup:
 			name = name_soup[1].get_text(strip=True)
 		all_moves.append(
-			PokemonMove(-1, "TM", name, "", "", "", -1)
+			PokemonMove("TM", name, None)
 		)
 
 	return all_moves
@@ -80,10 +80,10 @@ def get_pokemon_evs(pokemon, soup):
 		for ev in ev_list:
 			ev_split = ev.split(" ")
 			amount = int(ev_split[0])
-			name = "_".join(ev_split[1::])
+			name = " ".join(ev_split[1::])
 			evs.append(PokemonEV(
 				name, 
-				pokemon.number, 
+				pokemon.number,
 				pokemon.name, 
 				pokemon.sub_name, 
 				amount
@@ -92,7 +92,7 @@ def get_pokemon_evs(pokemon, soup):
 	return evs
 
 def get_pokemon_species(soup):
-	species = ""
+	species = None
 	species_selection = soup.select("th:-soup-contains('Species') + td")
 	if len(species_selection) > 0:
 		species = species_selection[0].get_text()
@@ -114,7 +114,7 @@ def get_pokemon_weight(soup):
 
 def get_pokemon_name(pokemon_soup, name_soup):
 	name_small_element = pokemon_soup.find("small")
-	sub_name = ""
+	sub_name = ''
 	if name_small_element is not None and len(name_small_element) > 0:
 		sub_name = name_small_element.text.strip()
 	name = get_tag(name_soup, "a")
@@ -129,7 +129,7 @@ def get_catch_rate(soup):
 	if match is not None:
 		groups = match.groups()
 		return (int(groups[0]), float(groups[1]))
-	return (-1,-1)
+	return (None,None)
 
 def get_friendship(soup):
 	inner_text = soup.select("td")[0].get_text(strip=True)
@@ -137,14 +137,14 @@ def get_friendship(soup):
 	if match is not None:
 		groups = match.groups()
 		return (int(groups[0]), groups[1].strip())
-	return (-1, "")
+	return (None, None)
 
 def get_exp(soup):
 	inner_text = soup.select("td")[0].get_text(strip=True)
 	try:
 		return int(inner_text)
 	except:
-		return -1
+		return None
 	
 def get_growth_rate(soup):
 	return soup.select("td")[0].get_text(strip=True)
@@ -158,9 +158,9 @@ def get_egg_cycles(soup):
 
 	cycles = re.findall(r"\d[\d,]+", soup.find("td").get_text())
 
-	EGG_CYCLES_NUMBER = -1
-	EGG_CYCLES_STEPS_MIN = -1
-	EGG_CYCLES_STEPS_MAX = -1
+	EGG_CYCLES_NUMBER = None
+	EGG_CYCLES_STEPS_MIN = None
+	EGG_CYCLES_STEPS_MAX = None
 	
 	if cycles is None:
 		print("Failed to get egg cycles using regex")
@@ -178,13 +178,13 @@ def get_gender_data(soup):
 		try:
 			return type(val)
 		except:
-			return -1
+			return None
 
 	gender_text = soup.find("td").get_text(strip=True)
 
 	gender_matches = re.findall(r"(?:(\d+)|(\d+\.\d+))% (male|female)", gender_text)
-	GENDER_MALE = -1
-	GENDER_FEMALE = -1
+	GENDER_MALE = None
+	GENDER_FEMALE = None
 
 	for matches in gender_matches:
 		int_val, float_val, gender = matches
