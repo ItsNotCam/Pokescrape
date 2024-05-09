@@ -4,4 +4,4 @@ images/
 pages/
 *.db
 *.db.bak
-*.txt
+venv/
