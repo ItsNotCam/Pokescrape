@@ -67,6 +67,7 @@ def init_db(conn):
 			print("Reading from", sql_file)
 			cursor.executescript(sql.read())
 	conn.commit()
+
 	cursor.close()
 
 def add_moves_to_database(pokemon, MOVES, conn):

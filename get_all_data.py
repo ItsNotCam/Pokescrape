@@ -5,7 +5,7 @@ from lib import db as DB
 from models import Move, Ability
 
 def get_tag(element, selector):
-  return element.find(selector).text.strip()
+  return element.find(selector).get_text(strip=True)
 
 def to_number(str):
 	if str.isdigit():
@@ -88,10 +88,16 @@ def get_dmg_effectiveness():
 		effect = eff_soup.get("title")
 		dmg_src, dmg_dst, effect = re.match(r"(?:(.*) → (.*)) = (.*)", effect).groups()
 
-		if effect == 'normal effectiveness':
-			effect = 'normal'
+		effect_number = 1
+		if effect == 'no effect':
+			effect_number = 0.5
+		elif effect == 'super-effective':
+			effect_number = 2
+
+		# if effect == 'normal effectiveness':
+		# 	effect = 'normal'
 		
-		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect, conn)
+		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect_number, conn)
 	
 	conn.close()
 
