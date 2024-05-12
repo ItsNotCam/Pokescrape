@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS pokemon (
 
   PRIMARY KEY (name, sub_name)
 );
-
-CREATE INDEX IF NOT EXISTS idx_number ON pokemon (number);
-CREATE INDEX IF NOT EXISTS idx_pokemon_name ON pokemon (name);
-CREATE INDEX IF NOT EXISTS idx_pokemon_sub_name ON pokemon (sub_name);
-CREATE INDEX IF NOT EXISTS idx_species ON pokemon (species);
+	
+CREATE INDEX idx_number ON pokemon (number);
+CREATE INDEX idx_pokemon_name ON pokemon (name);
+CREATE INDEX idx_pokemon_sub_name ON pokemon (sub_name);
+CREATE INDEX idx_species ON pokemon (species);

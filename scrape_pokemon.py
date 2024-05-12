@@ -1,9 +1,8 @@
-import requests, sys, sqlite3, asyncio, re
+import requests, sys,asyncio, re
 from bs4 import BeautifulSoup
 import aiofiles as aiof
 from tabulate import tabulate
 
-import get_all_data as GetData
 from lib.data_types import *
 from lib import pokestats, db
 
@@ -111,10 +110,7 @@ def get_img_name(name, sub_name):
 		img_name = f"{name}_{sub_name_cleaned}"
 	return f"{img_name.lower()}.png"
 
-def scrape(download_icons=False, download_images=False, start_number=None, end_number=None, debug=False):
-	conn = sqlite3.connect("db/pokemon.db")
-	db.init_db(conn)
-
+def scrape(download_icons=False, download_images=False, start_number=None, end_number=None, debug=False, cnx=None):
 	soup = BeautifulSoup(
 		requests.get("https://pokemondb.net/pokedex/all").content, 
 		features="html.parser"
@@ -195,14 +191,14 @@ def scrape(download_icons=False, download_images=False, start_number=None, end_n
 
 		print("--------------------------------------\n")
 
-		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
+		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, cnx)
 
 		if download_images:
 			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))
 		if download_icons:
 			loop.run_until_complete(download_image(num_soup.find("picture").find("img")["src"], f"icons/{img_name}.png"))
 		
-	conn.close()
+	cnx.commit()
  
 if __name__ == "__main__":
 	scrape(False, sys.argv[1])
