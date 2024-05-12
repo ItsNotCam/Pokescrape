@@ -146,6 +146,7 @@ def add_element_to_database(element, conn):
 
 def add_dmg_effectiveness(dmg_src, dmg_dest, effect, conn):
 	with conn.cursor() as cursor:
+		print(dmg_src, dmg_dest, effect)
 		cursor.execute("""
 		INSERT IGNORE INTO move_effectiveness (
 			dmg_source, dmg_dest, effectiveness

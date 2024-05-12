@@ -46,7 +46,6 @@ def get_all_moves(conn):
 		DB.add_move_to_database(new_move, conn)
 
 	conn.commit() 
-	# conn.close()
 
 def get_all_abilities(conn):
 	print("\nGetting all abilities...")
@@ -68,7 +67,6 @@ def get_all_abilities(conn):
 		DB.add_ability_to_database(new_ability, conn)
 		
 	conn.commit() 
-	# conn.close()
 
 def get_dmg_effectiveness(conn):
 	print("\nGetting damage effectiveness")
@@ -82,19 +80,21 @@ def get_dmg_effectiveness(conn):
 		effect = eff_soup.get("title")
 		dmg_src, dmg_dst, effect = re.match(r"(?:(.*) → (.*)) = (.*)", effect).groups()
 
-		effect_number = 1
+		effect_number = -1
 		if effect == 'no effect':
+			effect_number = 0
+		elif effect == 'not very effective':
 			effect_number = 0.5
+		elif effect == 'normal effectiveness':
+			effect_number = 1
 		elif effect == 'super-effective':
 			effect_number = 2
 
-		# if effect == 'normal effectiveness':
-		# 	effect = 'normal'
+		print(f"\'{effect}\'", effect_number)
 		
 		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect_number, conn)
 		
 	conn.commit() 
-	# conn.close()
 
 if __name__ == '__main__':
 	get_dmg_effectiveness()
