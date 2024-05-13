@@ -23,6 +23,7 @@ The entity relationship diagram and the tables' schema are shown at the bottom o
 `--images`: Downloads all of the detailed pokemon images
 
 ## Example Queries
+### If you are viewing from my [website](https://cameronayoung.dev), the syntax highlighting will be very off. It is recommended to click the GitHub button to view this readme.
 Get all water-type Pokemon:
 ```sql
 SELECT * 
