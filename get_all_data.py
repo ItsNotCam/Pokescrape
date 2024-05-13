@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import requests, sqlite3, re
+import requests, re
 
 from lib import db as DB
 from models import Move, Ability
@@ -12,15 +12,13 @@ def to_number(str):
 		return int(str)
 	return None	
 
-def get_all_moves():
+def get_all_moves(conn):
 	print("\nGetting all moves...")
 
 	URL = "https://pokemondb.net/move/all"
 	body = requests.get(URL).content
 	soup = BeautifulSoup(body, features="html.parser")
 	moves_soup = soup.body.find(id="moves").find("tbody").find_all("tr")
-
-	conn = sqlite3.connect("db/pokemon.db")
 
 	for idx, move_soup in enumerate(moves_soup):
 		name_soup, element_soup, dmg_category_soup, power_soup, \
@@ -44,20 +42,18 @@ def get_all_moves():
 			to_number(probability_soup.text.strip())
 		)
 
-		print(f"{idx+1}) {new_move.name}: {new_move.description}")
+		print(f"{idx+1}) {new_move.to_tuple()}")
 		DB.add_move_to_database(new_move, conn)
 
-	conn.close()
+	conn.commit() 
 
-def get_all_abilities():
+def get_all_abilities(conn):
 	print("\nGetting all abilities...")
 
 	URL = "https://pokemondb.net/ability"
 	body = requests.get(URL).content
 	soup = BeautifulSoup(body, features="html.parser")
 	abilities = soup.body.find(id="abilities").find("tbody").find_all("tr")
-
-	conn = sqlite3.connect("db/pokemon.db")
 
 	for idx, ability in enumerate(abilities):
 		name_soup, _, description_soup, generation_soup = ability.find_all("td")
@@ -70,36 +66,35 @@ def get_all_abilities():
 		print(f"{idx+1}) {new_ability.name}: {new_ability.description}")
 		DB.add_ability_to_database(new_ability, conn)
 		
-	conn.close()
+	conn.commit() 
 
-def get_dmg_effectiveness():
-
+def get_dmg_effectiveness(conn):
 	print("\nGetting damage effectiveness")
 	
 	URL = "https://pokemondb.net/type"
 	body = requests.get(URL).content
 	soup = BeautifulSoup(body, features="html.parser")
 
-	conn = sqlite3.connect("db/pokemon.db")
-	DB.init_db(conn)
-
 	type_effectiveness_soup = soup.select(".type-fx-cell")
 	for eff_soup in type_effectiveness_soup:
 		effect = eff_soup.get("title")
 		dmg_src, dmg_dst, effect = re.match(r"(?:(.*) → (.*)) = (.*)", effect).groups()
 
-		effect_number = 1
+		effect_number = -1
 		if effect == 'no effect':
+			effect_number = 0
+		elif effect == 'not very effective':
 			effect_number = 0.5
+		elif effect == 'normal effectiveness':
+			effect_number = 1
 		elif effect == 'super-effective':
 			effect_number = 2
 
-		# if effect == 'normal effectiveness':
-		# 	effect = 'normal'
+		print(f"\'{effect}\'", effect_number)
 		
 		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect_number, conn)
-	
-	conn.close()
+		
+	conn.commit() 
 
 if __name__ == '__main__':
 	get_dmg_effectiveness()

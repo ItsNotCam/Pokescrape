@@ -1,8 +1,6 @@
 from models import PokemonMove, PokemonEV
 import re
 
-from bs4 import BeautifulSoup
-
 def get_tag_all(element, selector):
   return [e.text.strip() for e in element.find_all(selector)]
 

@@ -7,4 +7,4 @@ class PokemonEV:
 		self.ev_amount = ev_amount
 	
 	def to_tuple(self):
-		return (self.ev_name, self.pokemon_number, self.pokemon_name, self.pokemon_sub_name, self.ev_amount)
+		return (self.ev_name, self.ev_amount, self.pokemon_number, self.pokemon_name, self.pokemon_sub_name)
