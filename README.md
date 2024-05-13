@@ -61,7 +61,7 @@ GROUP BY p.number, p.name, p.sub_name;
 ```
 
 Get all moves from one Pokemon and determine their effectiveness on a target Pokemon. \
-In this case, Pikachu is attacking Charizard:
+In this case, Onix is attacking Charizard:
 ```sql
 SELECT
   defender.name AS defender_name,
