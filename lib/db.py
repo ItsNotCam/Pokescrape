@@ -83,11 +83,11 @@ def init_db():
 		database="pokemon"
 	)
 
-	sql_files = sorted([f for f in os.listdir("db/init") if ".sql" in f])
+	sql_files = sorted([f for f in os.listdir("db") if ".sql" in f])
 	print("Getting SQL from files")
 	with conn.cursor() as cursor:
 		for sql_file in sql_files:
-			file_name = f'db/init/{sql_file}'
+			file_name = f'db/{sql_file}'
 			with open(file_name) as sql:
 				print(file_name)
 				data = sql.read()
