@@ -1,4 +1,4 @@
-import requests, sys,asyncio, re
+import requests, sys,asyncio, re, os
 from bs4 import BeautifulSoup
 import aiofiles as aiof
 from tabulate import tabulate
@@ -109,7 +109,13 @@ def get_img_name(name, sub_name):
 		img_name = f"{name}_{sub_name_cleaned}"
 	return f"{img_name.lower()}.png"
 
-def scrape_pokemon(download_icons=False, download_images=False, start_number=None, end_number=None, debug=False, cnx=None):
+def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=False, start_number=None, end_number=None, debug=False, cnx=None):
+	if download_icons and not os.path.exists("icons"):
+		os.mkdir("icons")
+
+	if download_images and not os.path.exists("images"):
+		os.mkdir("images")
+
 	soup = BeautifulSoup(
 		requests.get("https://pokemondb.net/pokedex/all").content, 
 		features="html.parser"
@@ -130,67 +136,68 @@ def scrape_pokemon(download_icons=False, download_images=False, start_number=Non
 		POKEMON_NAME, POKEMON_SUB_NAME = parse_data.get_pokemon_name(pokedex_row_soup, name_soup)
 		POKEMON_LINK = parse_data.get_pokemon_link(name_soup)
 
-		# Getting more detailed pokemon data
-		pokemon_soup = BeautifulSoup(
-			requests.get(f"https://pokemondb.net{POKEMON_LINK}").content, 
-			features="html.parser"
-		)
-		
-		stats_data = PokemonStatsData(
-			soup_to_int(total_soup), 
-			soup_to_int(hp_soup),
-			soup_to_int(attack_soup),
-			soup_to_int(defense_soup),
-			soup_to_int(sp_att_soup),
-			soup_to_int(sp_def_soup),
-			soup_to_int(speed_soup),
-		)
-		physical_data = get_physical_data(pokemon_soup)
-		training_data = get_training_data(pokemon_soup)
-		breeding_data = get_breeding_data(pokemon_soup)
-
-		img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
-		new_pokemon = Pokemon(
-			POKEMON_NUMBER, 
-			POKEMON_NAME, 
-			POKEMON_SUB_NAME, 
-			img_name,
-			stats_data,
-			physical_data,
-			training_data,
-			breeding_data
-		)
-
-		abilities = parse_data.get_pokemon_abilies(pokemon_soup)
-		elements = parse_data.get_pokemon_elements(elements_soup)
-		moves = parse_data.get_pokemon_moves(pokemon_soup)
-		evs = parse_data.get_pokemon_evs(new_pokemon, pokemon_soup)
-		
-		print("--------------------------------------")
-		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
-		if debug:
-			abilities_str = ", ".join(abilities)
-			elements_str = ", ".join(elements)
-			moves_str = tabulate(
-				[m.to_tuple() for m in moves], 
-				headers= ["Source", "Name", "Level"], 
-				tablefmt="outline"
+		if get_pokemon:
+			# Getting more detailed pokemon data
+			pokemon_soup = BeautifulSoup(
+				requests.get(f"https://pokemondb.net{POKEMON_LINK}").content, 
+				features="html.parser"
 			)
-			ev_str = tabulate(
-				[ev.to_tuple() for ev in evs], 
-				headers=["Name", "pkmn #", "pkmn name", "pkmn subname", "Amount"], 
-				tablefmt="outline"
+			
+			stats_data = PokemonStatsData(
+				soup_to_int(total_soup), 
+				soup_to_int(hp_soup),
+				soup_to_int(attack_soup),
+				soup_to_int(defense_soup),
+				soup_to_int(sp_att_soup),
+				soup_to_int(sp_def_soup),
+				soup_to_int(speed_soup),
+			)
+			physical_data = get_physical_data(pokemon_soup)
+			training_data = get_training_data(pokemon_soup)
+			breeding_data = get_breeding_data(pokemon_soup)
+
+			img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
+			new_pokemon = Pokemon(
+				POKEMON_NUMBER, 
+				POKEMON_NAME, 
+				POKEMON_SUB_NAME, 
+				img_name,
+				stats_data,
+				physical_data,
+				training_data,
+				breeding_data
 			)
 
-			print("")
-			print(f"ABILITIES: {abilities_str}\n")
-			print(f"ELEMENTS: {elements_str}\n")
-			print(f"EVS:\n{ev_str}\n\n")
-			print(f"MOVES:\n{moves_str}\n")
+			abilities = parse_data.get_pokemon_abilies(pokemon_soup)
+			elements = parse_data.get_pokemon_elements(elements_soup)
+			moves = parse_data.get_pokemon_moves(pokemon_soup)
+			evs = parse_data.get_pokemon_evs(new_pokemon, pokemon_soup)
+			
+			print("--------------------------------------")
+			print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
+			if debug:
+				abilities_str = ", ".join(abilities)
+				elements_str = ", ".join(elements)
+				moves_str = tabulate(
+					[m.to_tuple() for m in moves], 
+					headers= ["Source", "Name", "Level"], 
+					tablefmt="outline"
+				)
+				ev_str = tabulate(
+					[ev.to_tuple() for ev in evs], 
+					headers=["Name", "pkmn #", "pkmn name", "pkmn subname", "Amount"], 
+					tablefmt="outline"
+				)
 
-		print("--------------------------------------\n")
+				print("")
+				print(f"ABILITIES: {abilities_str}\n")
+				print(f"ELEMENTS: {elements_str}\n")
+				print(f"EVS:\n{ev_str}\n\n")
+				print(f"MOVES:\n{moves_str}\n")
 
-		db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, cnx)
+			print("--------------------------------------\n")
+
+			db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, cnx)
 
 		if download_images:
 			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))

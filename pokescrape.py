@@ -43,11 +43,11 @@ def main():
 	if args.damage:
 		get_data.get_dmg_effectiveness(conn)
 	
-	if args.pokemon:
+	if args.pokemon or args.icons or args.images:
 		start_number = args.pstart or None
 		end_number = args.pend or None
 		verbose = args.verbose or False
-		scrape_pokemon(args.icons, args.images, start_number, end_number, verbose, conn)
+		scrape_pokemon(args.pokemon, args.icons, args.images, start_number, end_number, verbose, conn)
 	
 	conn.close()
 
