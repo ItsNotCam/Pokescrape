@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests, re
 
 from lib import db as DB
-from models import Move, Ability
+from lib.models import Move, Ability
 
 def get_tag(element, selector):
   return element.find(selector).get_text(strip=True)

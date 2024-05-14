@@ -1,4 +1,4 @@
-import argparse, os
+import argparse
 
 import get_all_data
 from scrape import scrape

@@ -6,7 +6,7 @@ from tabulate import tabulate
 from lib.data_types import *
 from lib import pokestats, db
 
-from models.pokemon import Pokemon
+from lib.models import Pokemon
 
 loop = asyncio.get_event_loop()
 
