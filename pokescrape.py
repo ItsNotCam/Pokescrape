@@ -1,10 +1,8 @@
-import argparse
+import argparse, mysql.connector
 
-import get_all_data
-from scrape import scrape
+import lib.get_data as get_data
+from lib.scrape import scrape_pokemon
 from lib import db as DB
-
-import mysql.connector
 
 def main():
 	parser = argparse.ArgumentParser(description='Description of your script.')
@@ -37,19 +35,19 @@ def main():
 		)
 
 	if args.moves:
-		get_all_data.get_all_moves(conn)
+		get_data.get_all_moves(conn)
 	
 	if args.abilities:
-		get_all_data.get_all_abilities(conn)
+		get_data.get_all_abilities(conn)
 
 	if args.damage:
-		get_all_data.get_dmg_effectiveness(conn)
+		get_data.get_dmg_effectiveness(conn)
 	
 	if args.pokemon:
 		start_number = args.pstart or None
 		end_number = args.pend or None
 		verbose = args.verbose or False
-		scrape(args.icons, args.images, start_number, end_number, verbose, conn)
+		scrape_pokemon(args.icons, args.images, start_number, end_number, verbose, conn)
 	
 	conn.close()
 
