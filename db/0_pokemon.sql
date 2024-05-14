@@ -28,10 +28,20 @@ CREATE TABLE IF NOT EXISTS pokemon (
 	egg_cycles_steps_min INTEGER,
 	egg_cycles_steps_max INTEGER,
 
-  PRIMARY KEY (name, sub_name)
+  PRIMARY KEY (
+		number, name, sub_name
+	),
+
+  -- CONSTRAINT uq_pokemon_constraint_number UNIQUE (number),
+  -- CONSTRAINT uq_pokemon_constraint_name UNIQUE (name),
+  -- CONSTRAINT uq_pokemon_constraint_sub_name UNIQUE (sub_name)
+  CONSTRAINT uq_pokemon_constraint UNIQUE (
+		number, name, sub_name
+	)
 );
-	
-CREATE INDEX idx_number ON pokemon (number);
-CREATE INDEX idx_pokemon_name ON pokemon (name);
-CREATE INDEX idx_pokemon_sub_name ON pokemon (sub_name);
-CREATE INDEX idx_species ON pokemon (species);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pokemon_partial
+ON pokemon (number, name, sub_name)
+WHERE number IS NOT NULL 
+	AND name IS NOT NULL 
+	AND sub_name IS NOT NULL;

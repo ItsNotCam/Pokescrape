@@ -90,6 +90,7 @@ def get_dmg_effectiveness(conn):
 		elif effect == 'super-effective':
 			effect_number = 2
 
+		print(f"{dmg_src} -> {dmg_dst}: {effect}")
 		DB.add_dmg_effectiveness(dmg_src, dmg_dst, effect_number, conn)
 		
 	conn.commit() 
