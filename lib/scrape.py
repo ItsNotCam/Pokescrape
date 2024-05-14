@@ -136,12 +136,14 @@ def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=Fals
 		POKEMON_NAME, POKEMON_SUB_NAME = parse_data.get_pokemon_name(pokedex_row_soup, name_soup)
 		POKEMON_LINK = parse_data.get_pokemon_link(name_soup)
 
+		pokemon_soup = BeautifulSoup(
+			requests.get(f"https://pokemondb.net{POKEMON_LINK}").content, 
+			features="html.parser"
+		)
+		img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
+
 		if get_pokemon:
 			# Getting more detailed pokemon data
-			pokemon_soup = BeautifulSoup(
-				requests.get(f"https://pokemondb.net{POKEMON_LINK}").content, 
-				features="html.parser"
-			)
 			
 			stats_data = PokemonStatsData(
 				soup_to_int(total_soup), 
@@ -152,11 +154,11 @@ def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=Fals
 				soup_to_int(sp_def_soup),
 				soup_to_int(speed_soup),
 			)
+			
 			physical_data = get_physical_data(pokemon_soup)
 			training_data = get_training_data(pokemon_soup)
 			breeding_data = get_breeding_data(pokemon_soup)
 
-			img_name = get_img_name(POKEMON_NAME, POKEMON_SUB_NAME)
 			new_pokemon = Pokemon(
 				POKEMON_NUMBER, 
 				POKEMON_NAME, 
