@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: pokedex_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: pokemon
+      POSTGRES_USER: cam
+      POSTGRES_PASSWORD: ok
+    volumes:
+      - postgres_data:/home/cam/PokeAPIdb
+
+volumes:
+  postgres_data:
