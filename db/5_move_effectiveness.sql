@@ -6,9 +6,16 @@ CREATE TABLE IF NOT EXISTS move_effectiveness (
 	FOREIGN KEY (dmg_source) REFERENCES element(name),
 	FOREIGN KEY (dmg_dest) REFERENCES element(name),
 
-	PRIMARY KEY (dmg_source, dmg_dest)
+	PRIMARY KEY (
+		dmg_source, dmg_dest
+	),
+
+	CONSTRAINT uq_move_effectiveness UNIQUE (
+		dmg_source, dmg_dest
+	)
 );
 
-CREATE INDEX idx_move_dmg_source ON move_effectiveness (dmg_source);
-CREATE INDEX idx_move_dmg_dest ON move_effectiveness (dmg_dest);
-CREATE INDEX idx_move_effectiveness ON move_effectiveness (effectiveness);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_move_effectiveness_partial
+ON move_effectiveness (dmg_source, dmg_dest)
+WHERE dmg_source IS NOT NULL 
+	AND dmg_dest IS NOT NULL;

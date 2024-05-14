@@ -109,7 +109,7 @@ def get_img_name(name, sub_name):
 		img_name = f"{name}_{sub_name_cleaned}"
 	return f"{img_name.lower()}.png"
 
-def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=False, start_number=None, end_number=None, debug=False, cnx=None):
+def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=False, start_number=None, end_number=None, debug=False, conn=None):
 	if download_icons and not os.path.exists("icons"):
 		os.mkdir("icons")
 
@@ -154,7 +154,7 @@ def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=Fals
 				soup_to_int(sp_def_soup),
 				soup_to_int(speed_soup),
 			)
-			
+
 			physical_data = get_physical_data(pokemon_soup)
 			training_data = get_training_data(pokemon_soup)
 			breeding_data = get_breeding_data(pokemon_soup)
@@ -176,7 +176,7 @@ def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=Fals
 			evs = parse_data.get_pokemon_evs(new_pokemon, pokemon_soup)
 			
 			print("--------------------------------------")
-			print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
+			print(f"Adding #{new_pokemon.number} {new_pokemon.name} {new_pokemon.sub_name} to database")
 			if debug:
 				abilities_str = ", ".join(abilities)
 				elements_str = ", ".join(elements)
@@ -197,16 +197,25 @@ def scrape_pokemon(get_pokemon=False, download_icons=False, download_images=Fals
 				print(f"EVS:\n{ev_str}\n\n")
 				print(f"MOVES:\n{moves_str}\n")
 
-			print("--------------------------------------\n")
 
-			db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, cnx)
+			db.add_pokemon_to_database(new_pokemon, abilities, elements, moves, evs, conn)
 
 		if download_images:
-			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, f"images/{img_name}.png", f"https://pokemondb.net{POKEMON_LINK}"))
+			img_path = f"images/{img_name}"
+			img_link = f"https://pokemondb.net{POKEMON_LINK}"
+			print("downloading", img_link, "to", img_path)
+			db.update_pokemon_image_path(POKEMON_NUMBER, POKEMON_NAME, POKEMON_SUB_NAME, img_path, conn)
+			loop.run_until_complete(download_pkmn_img(POKEMON_NAME, img_path, img_link))
 		if download_icons:
-			loop.run_until_complete(download_image(num_soup.find("picture").find("img")["src"], f"icons/{img_name}.png"))
+			img_path = f"icons/{img_name}"
+			img_link = num_soup.find("picture").find("img")["src"]
+			print("downloading", img_link, "to", img_path)
+			db.update_pokemon_image_path(POKEMON_NUMBER, POKEMON_NAME, POKEMON_SUB_NAME, img_path, conn)
+			loop.run_until_complete(download_image(img_link, img_path))
+			
+		print("--------------------------------------\n")
 		
-	cnx.commit()
+	conn.commit()
  
 if __name__ == "__main__":
 	scrape_pokemon(False, sys.argv[1])

@@ -1,4 +1,8 @@
 CREATE TABLE IF NOT EXISTS ev (
-	name VARCHAR(64) PRIMARY KEY
+	name VARCHAR(64) UNIQUE PRIMARY KEY,
+	CONSTRAINT uq_ev_constraint UNIQUE (name)
 );
-CREATE INDEX idx_ev_name ON ev (name);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ev_name ON ev (
+	name
+);

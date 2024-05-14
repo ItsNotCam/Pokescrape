@@ -4,15 +4,21 @@ CREATE TABLE IF NOT EXISTS pokemon_element (
   pokemon_name VARCHAR(255),
   pokemon_sub_name VARCHAR(255),
 
-  FOREIGN KEY (element_name) REFERENCES element(name),
-	FOREIGN KEY (pokemon_number) REFERENCES pokemon(number),
-  FOREIGN KEY (pokemon_name) REFERENCES pokemon(name),
-  FOREIGN KEY (pokemon_sub_name) REFERENCES pokemon(sub_name),
+  CONSTRAINT fk_element_name 
+	FOREIGN KEY (element_name)
+	REFERENCES element(name),
 
-	PRIMARY KEY (element_name, pokemon_number, pokemon_name, pokemon_sub_name)
+	CONSTRAINT fk_pokemon_element FOREIGN KEY (
+		pokemon_number, pokemon_name, pokemon_sub_name
+	) REFERENCES pokemon(
+		number, name, sub_name
+	),
+
+	PRIMARY KEY (
+		element_name, pokemon_number, pokemon_name, pokemon_sub_name
+	)
 );
 
-CREATE INDEX idx_element_name ON pokemon_element (element_name);
-CREATE INDEX idx_elements_pokemon_number ON pokemon_element (pokemon_number);
-CREATE INDEX idx_elements_pokemon_name ON pokemon_element (pokemon_name);
-CREATE INDEX idx_elements_pokemon_sub_name ON pokemon_element (pokemon_sub_name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pokemon_element_partial
+ON pokemon_element (element_name, pokemon_number, pokemon_name, pokemon_sub_name)
+WHERE element_name IS NOT NULL AND pokemon_number IS NOT NULL AND pokemon_name IS NOT NULL AND pokemon_sub_name IS NOT NULL;

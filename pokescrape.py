@@ -1,4 +1,4 @@
-import argparse, mysql.connector
+import argparse, psycopg2
 
 import lib.get_data as get_data
 from lib.scrape import scrape_pokemon
@@ -27,12 +27,7 @@ def main():
 	if args.init:
 		conn = DB.init_db()
 	else:
-		conn = mysql.connector.connect(
-			host="localhost",
-			user="cam",
-			password="ok",
-			database="pokemon"
-		)
+		conn = DB.connect()
 
 	if args.moves:
 		get_data.get_all_moves(conn)
