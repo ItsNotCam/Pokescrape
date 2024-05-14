@@ -4,9 +4,8 @@ import aiofiles as aiof
 from tabulate import tabulate
 
 from lib.data_types import *
-from lib import get_data, db
-
 from lib.models import Pokemon
+from lib import parse_data, parse_data, db
 
 loop = asyncio.get_event_loop()
 
@@ -64,19 +63,19 @@ def get_training_data(soup2):
 
 		CATCH_RATE_NUMBER = CATCH_RATE_PERCENT = 0
 		if len(training_selection) > 1:
-			CATCH_RATE_NUMBER, CATCH_RATE_PERCENT = get_data.get_catch_rate(training_selection[1])
+			CATCH_RATE_NUMBER, CATCH_RATE_PERCENT = parse_data.get_catch_rate(training_selection[1])
 
 		FRIENDSHIP_NUMBER = FRIENDSHIP_EXTREMITY = 0
 		if len(training_selection) > 2:
-			FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY = get_data.get_friendship(training_selection[2])
+			FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY = parse_data.get_friendship(training_selection[2])
 		
 		BASE_EXP = 0
 		if len(training_selection) > 3:
-			BASE_EXP = get_data.get_exp(training_selection[3])
+			BASE_EXP = parse_data.get_exp(training_selection[3])
 
 		GROWTH_RATE = ""
 		if len(training_selection) > 4:
-			GROWTH_RATE = get_data.get_growth_rate(training_selection[4])
+			GROWTH_RATE = parse_data.get_growth_rate(training_selection[4])
 
 		return TrainingData(CATCH_RATE_NUMBER, CATCH_RATE_PERCENT, FRIENDSHIP_NUMBER, FRIENDSHIP_EXTREMITY, BASE_EXP, GROWTH_RATE)
 
@@ -88,16 +87,16 @@ def get_breeding_data(soup):
 		print("\n")
 		return (None, None, None, None, None, None)
 
-	EGG_GROUPS = get_data.get_egg_groups(breeding_data[0])
-	GENDER_MALE, GENDER_FEMALE = get_data.get_gender_data(breeding_data[1])
-	EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX = get_data.get_egg_cycles(breeding_data[2])
+	EGG_GROUPS = parse_data.get_egg_groups(breeding_data[0])
+	GENDER_MALE, GENDER_FEMALE = parse_data.get_gender_data(breeding_data[1])
+	EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX = parse_data.get_egg_cycles(breeding_data[2])
 
 	return BreedingData(EGG_GROUPS, GENDER_MALE, GENDER_FEMALE, EGG_CYCLES_NUMBER, EGG_CYCLES_STEPS_MIN, EGG_CYCLES_STEPS_MAX)
 
 def get_physical_data(soup):
-	POKEMON_SPECIES = get_data.get_pokemon_species(soup)
-	POKEMON_HEIGHT = get_data.get_pokemon_height(soup)
-	POKEMON_WEIGHT = get_data.get_pokemon_weight(soup)
+	POKEMON_SPECIES = parse_data.get_pokemon_species(soup)
+	POKEMON_HEIGHT = parse_data.get_pokemon_height(soup)
+	POKEMON_WEIGHT = parse_data.get_pokemon_weight(soup)
 	return PhysicalData(POKEMON_SPECIES, POKEMON_HEIGHT, POKEMON_WEIGHT)
 
 def soup_to_int(soup):
@@ -128,8 +127,8 @@ def scrape_pokemon(download_icons=False, download_images=False, start_number=Non
 		if end_number and POKEMON_NUMBER > end_number:
 			return
 
-		POKEMON_NAME, POKEMON_SUB_NAME = get_data.get_pokemon_name(pokedex_row_soup, name_soup)
-		POKEMON_LINK = get_data.get_pokemon_link(name_soup)
+		POKEMON_NAME, POKEMON_SUB_NAME = parse_data.get_pokemon_name(pokedex_row_soup, name_soup)
+		POKEMON_LINK = parse_data.get_pokemon_link(name_soup)
 
 		# Getting more detailed pokemon data
 		pokemon_soup = BeautifulSoup(
@@ -162,10 +161,10 @@ def scrape_pokemon(download_icons=False, download_images=False, start_number=Non
 			breeding_data
 		)
 
-		abilities = get_data.get_pokemon_abilies(pokemon_soup)
-		elements = get_data.get_pokemon_elements(elements_soup)
-		moves = get_data.get_pokemon_moves(pokemon_soup)
-		evs = get_data.get_pokemon_evs(new_pokemon, pokemon_soup)
+		abilities = parse_data.get_pokemon_abilies(pokemon_soup)
+		elements = parse_data.get_pokemon_elements(elements_soup)
+		moves = parse_data.get_pokemon_moves(pokemon_soup)
+		evs = parse_data.get_pokemon_evs(new_pokemon, pokemon_soup)
 		
 		print("--------------------------------------")
 		print(f"Adding #{new_pokemon.number} {new_pokemon.name} to database")
