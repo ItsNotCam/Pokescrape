@@ -52,7 +52,7 @@ Get all data for each Pokemon and include all of its elements
 ```sql
 SELECT 
   p.*,
-  GROUP_CONCAT(pe.element_name) AS elements
+  STRING_AGG(pe.element_name::text) AS elements
 FROM pokemon AS p
 INNER JOIN pokemon_element AS pe 
   ON pe.pokemon_number = p.number
