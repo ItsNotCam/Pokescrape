@@ -15,12 +15,12 @@ CREATE TABLE IF NOT EXISTS pokemon (
 	height REAL,
 	weight REAL,
 
-	catch_rate_num INTEGER NOT NULL,
-	catch_rate_percent REAL NOT NULL,
+	catch_rate_num INTEGER,
+	catch_rate_percent REAL,
 	friendship_num INTEGER,
 	friendship_extremity VARCHAR(64),
-	base_exp INTEGER NOT NULL,
-	growth_rate VARCHAR(64) NOT NULL,
+	base_exp INTEGER,
+	growth_rate VARCHAR(64),
 
 	gender_male_percent REAL,
 	gender_female_percent REAL,

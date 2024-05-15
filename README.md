@@ -1,6 +1,6 @@
 # Pokescrape
 
-Pokescrape is a web scraper that pulls pokemon data from [Pokemon DB](https://pokemondb.net) and stores it in a mysql database.
+Pokescrape is a web scraper that pulls pokemon data from [Pokemon DB](https://pokemondb.net) and stores it in a PostgreSQL database.
 The entity relationship diagram and the tables' schema are shown at the bottom of this README
 
 ## Setup
@@ -65,18 +65,18 @@ Get all moves from one Pokemon and determine their effectiveness on a target Pok
 In this case, Onix is attacking Charizard:
 ```sql
 SELECT
-  defender.name AS defender_name,
-  defender.sub_name AS defender_sub_name,
-  GROUP_CONCAT(DISTINCT defender_element.element_name) AS defender_elements,
   m.name AS move_name,
   me.dmg_source,
+  defender.name AS defender_name,
+  defender.sub_name AS defender_sub_name,
+  STRING_AGG(DISTINCT defender_element.element_name::text, ',') AS defender_elements,
   CASE
     WHEN me.effectiveness = 0 THEN 'no effectiveness'
     WHEN me.effectiveness = 0.5 THEN 'not very effective'
     WHEN me.effectiveness = 1 THEN 'normal'
     WHEN me.effectiveness = 2 THEN 'super-effective'
   END AS friendly_effectiveness,
-  GROUP_CONCAT(DISTINCT me.effectiveness) AS effectiveness
+  STRING_AGG(DISTINCT me.effectiveness::text, ',') AS effectiveness
 FROM pokemon_move AS pm
 INNER JOIN pokemon AS defender
   ON defender.name = 'Charizard'
@@ -94,7 +94,13 @@ INNER JOIN pokemon_element AS defender_element
   AND defender_element.pokemon_name = defender.name
   AND defender_element.pokemon_sub_name = defender.sub_name
 WHERE pm.pokemon_name = 'Onix'
-GROUP BY pm.move_name, me.dmg_dest, defender.name, defender.sub_name
+GROUP BY 
+	pm.move_name, 
+	me.dmg_dest, 
+	defender.name, 
+	defender.sub_name, 
+	m.name, 
+	me.dmg_source
 ORDER BY effectiveness DESC;
 ```
 

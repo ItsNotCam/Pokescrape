@@ -1,4 +1,4 @@
-import argparse, psycopg2
+import argparse
 
 import lib.get_data as get_data
 from lib.scrape import scrape_pokemon
