@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS move_effectiveness (
 	dmg_source VARCHAR(64) NOT NULL,
 	dmg_dest VARCHAR(64) NOT NULL,
-	effectiveness INT NOT NULL,
+	effectiveness REAL NOT NULL,
 
 	FOREIGN KEY (dmg_source) REFERENCES element(name),
 	FOREIGN KEY (dmg_dest) REFERENCES element(name),
