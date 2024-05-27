@@ -13,6 +13,10 @@ def get_pokemon_abilies(soup):
 	abilities_selection = soup.select("th:-soup-contains('Abilities') + td span a")
 	if abilities_selection is not None and len(abilities_selection) > 0:
 		ability_names.append(abilities_selection[0].get_text(strip=True))
+	
+	abilities_selection = soup.select("th:-soup-contains('Abilities') + td small a")
+	if abilities_selection is not None and len(abilities_selection) > 0:
+		ability_names.append(abilities_selection[0].get_text(strip=True))
 
 	return ability_names
 
