@@ -24,7 +24,7 @@ The entity relationship diagram and the tables' schema are shown at the bottom o
 
 ## Example Queries
 ### If you are viewing from my [website](https://cameronayoung.dev), the syntax highlighting will be very off. It is recommended to click the GitHub button on this card to view this readme.
-Get all water-type Pokemon:
+### Get all water-type Pokemon:
 ```sql
 SELECT * 
 FROM pokemon
@@ -35,7 +35,7 @@ INNER JOIN pokemon_element
 WHERE element_name = 'Water'
 ```
 
-Get a Pokemon's move set:
+### Get a Pokemon's move set:
 ```sql
 SELECT m.* 
 FROM pokemon AS p
@@ -48,7 +48,7 @@ INNER JOIN move AS m
 WHERE p.name = 'Mudkip';
 ```
 
-Get all data for each Pokemon and include all of its elements
+### Get all data for each Pokemon and include all of its elements
 ```sql
 SELECT 
   p.*,
@@ -61,7 +61,7 @@ INNER JOIN pokemon_element AS pe
 GROUP BY p.number, p.name, p.sub_name;
 ```
 
-Get all moves from one Pokemon and determine their effectiveness on a target Pokemon. \
+### Get all moves from one Pokemon and determine their effectiveness on a target Pokemon.
 In this case, Onix is attacking Charizard:
 ```sql
 SELECT
@@ -95,12 +95,12 @@ INNER JOIN pokemon_element AS defender_element
   AND defender_element.pokemon_sub_name = defender.sub_name
 WHERE pm.pokemon_name = 'Onix'
 GROUP BY 
-	pm.move_name, 
-	me.dmg_dest, 
-	defender.name, 
-	defender.sub_name, 
-	m.name, 
-	me.dmg_source
+  pm.move_name, 
+  me.dmg_dest, 
+  defender.name, 
+  defender.sub_name, 
+  m.name, 
+  me.dmg_source
 ORDER BY effectiveness DESC;
 ```
 
