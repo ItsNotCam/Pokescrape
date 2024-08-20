@@ -1,4 +1,4 @@
-# Pokescrape
+# 🚀 Pokescrape
 
 Pokescrape is a web scraper that pulls pokemon data from [Pokemon DB](https://pokemondb.net) and stores it in a PostgreSQL database.
 The entity relationship diagram and the tables' schema are shown at the bottom of this README
